@@ -1,4 +1,4 @@
-    %%% MàJ 20/03/2020
+    %%% MàJ 06/09/2021
 %%% Script principal pour le lancer de batchs de tests
 %%% Entrées : Chemins précisés ci-dessous (p et PathPreSet) menant aux données c3d et aux trajectoires cibles
 %%% Sorties : Données issues de la boucle d'optimisation, sauvegardées en .mat dans SavePath
@@ -6,7 +6,7 @@ clear all;
 close all;
 clc;
 
-addpath("C:\Users\nhareng\Desktop\CodeCommente\hobis");
+%addpath("C:\Users\nhareng\Desktop\CodeCommente\hobis");
 
 flag = struct;
 
@@ -14,24 +14,49 @@ flag.c3d = 1;
 flag.txt = 0;
 flag.dyn = 1;
 
-% Chemin d'accès aux .c3d et à l'excel compilant les données de marche : 
-p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\BDD\';
 
-% Récupération des données de l'excel: 
-% Format : Nom fichier / Frame début et fin cycle de marche / Frame initiale
-% BornesMarches = Chiffres (BorneSup,BorneInf,FrameIni) ; Names = Noms
-[BornesMarche, Names] = xlsread(strcat(p,'Classement_Pas.xlsx'),'A2:D79');
+I = input("Prompt path to data directory and press Enter, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\ \n", 's');
+
+if isempty(I)
+    % Chemin d'accès par défaut : .c3d et à l'excel compilant les données de marche :  
+    p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
+    
+    % Récupération des données de l'excel: 
+    % Format : Nom fichier / Frame début et fin cycle de marche / Frame initiale
+    % BornesMarches = Chiffres (BorneSup,BorneInf,FrameIni) ; Names = Noms
+    [BornesMarche, Names] = xlsread(strcat(p,'Classement_Pas.xlsx'),'A2:D79');
+else
+    % Chemin d'accès spécifié par l'utilisateur
+    p = I;
+end
+
 
 % Déf du dossier de récéption des données calculées pour ce batch
-SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\12\';
+I = input("Prompt path to save directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\ \n", 's');
 
-% Déf du dossier contenant les données précalculées :
-% i.e. les Poulaines utilisées comme cible, elles mêmes issues des 
-% trajectoires angulaires de chaque fichier
-PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\';
+if isempty(I)
+    SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\';
+else
+    SavePath = I;
+end
+
+I = input("Prompt path to directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\ \n", 's');
+
+if isempty(I)
+    % Déf du dossier contenant les données précalculées :
+    % i.e. les Poulaines utilisées comme cible, elles mêmes issues des
+    % trajectoires angulaires de chaque fichier
+    PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\';
+    presets = 0;
+elseif I=='0'
+    presets = 1;
+else
+    PathPreSet = I;
+    presets = 0;    
+end
+
 % Si pas de données précalculées, faire tourner une fois en mettant presets
 % à 1.
-presets = 0;
 % Première phase : Pour chaque fichier .c3d répertorié dans l'excel : -> Extraire les
 % données des marqueurs pendant le cycle de marche, lancer l'algo, puis sauver le résultat.
 for ii=length(Names)%1%:11:length(Names)
@@ -143,22 +168,51 @@ for ii=length(Names)%1%:11:length(Names)
         % Approximation par Splines
         C3DUpdate2;
         
-        
+    elseif flag.txt
+        dd = load(strcat(p,''));
+        Pelv1=dd(1,:);	
+        Pelv2g=dd(2,:);
+        Pelv4g=dd(3,:);
+        Pelv5g=dd(4,:);
+        Fem1g=dd(5,:);
+        Fem9g=dd(6,:);
+        Fem10g=dd(7,:);
+        Fem6g=dd(8,:);
+        Tib5g=dd(9,:);
+        Tib6g=dd(10,:);
+        Tib1g=dd(11,:);
+        Tal2g=dd(12,:);
+        Tal3g=dd(13,:);
+        Tal1g=dd(14,:);
+        Pelv2d=dd(15,:);
+        Pelv4d=dd(16,:);
+        Pelv5d=dd(17,:);
+        Fem1d=dd(18,:);
+        Fem9d=dd(19,:);
+        Fem10d=dd(20,:);
+        Fem6d=dd(21,:);
+        Tib5d=dd(22,:);
+        Tib6d=dd(23,:);
+        Tib1d=dd(24,:);
+        Tal2d=dd(25,:);
+        Tal3d=dd(26,:);
+        Tal1d=dd(27,:);
+
     end
     
     if presets
         close all;
         save(strcat(PathPreSet,Names{ii},'.mat'),'PN','Pol','Param', 'R_monde_local','R_Pelvis_monde_local', 'R_LFem_ref_local', 'R_LTib_ref_local', 'R_RFem_ref_local', 'R_RTib_ref_local');
-    if flag.dyn
-        Test = spline_to_curve(Pol, 1, 1/202 );
-        Test = Test(1:end-3,:);
-        Test =[Test(126:end,:);Test(1:125,:)];
-        Test = [Test ; Test ; Test];
-        fileID = fopen('C:\Users\nhareng\Desktop\CodeCommente\DataLouise\DataLouise.txt','w');
-        fprintf(fileID,'%8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s\n', 'PelX', 'PelY', 'PelZ', 'RHipX', 'RHipY', 'RHipZ', 'LHipX', 'LHipY', 'LHipZ', 'RKneeX', 'LKneeX');
-        fprintf(fileID,'%8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f\n', Test);
-        fclose(fileID);
-    end
+%     if flag.dyn
+%         Test = spline_to_curve(Pol, 1, 1/202 );
+%         Test = Test(1:end-3,:);
+%         Test =[Test(126:end,:);Test(1:125,:)];
+%         Test = [Test ; Test ; Test];
+%         fileID = fopen('C:\Users\nhareng\Desktop\CodeCommente\DataLouise\DataLouise.txt','w');
+%         fprintf(fileID,'%8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s\n', 'PelX', 'PelY', 'PelZ', 'RHipX', 'RHipY', 'RHipZ', 'LHipX', 'LHipY', 'LHipZ', 'RKneeX', 'LKneeX');
+%         fprintf(fileID,'%8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f\n', Test);
+%         fclose(fileID);
+%     end
     else
         for jj =length(Names)%1:length(Names)-1
             jj
