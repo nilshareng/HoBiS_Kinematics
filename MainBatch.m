@@ -10,9 +10,9 @@ clc;
 
 flag = struct;
 
-flag.c3d = 1;
+flag.c3d = 0;
 flag.txt = 0;
-flag.dyn = 1;
+flag.dyn = 0;
 
 
 I = input("Prompt path to data directory and press Enter, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\ \n", 's');
@@ -25,9 +25,20 @@ if isempty(I)
     % Format : Nom fichier / Frame début et fin cycle de marche / Frame initiale
     % BornesMarches = Chiffres (BorneSup,BorneInf,FrameIni) ; Names = Noms
     [BornesMarche, Names] = xlsread(strcat(p,'Classement_Pas.xlsx'),'A2:D79');
+    flag.c3d = 1;
 else
     % Chemin d'accès spécifié par l'utilisateur
     p = I;
+    a = prompt('Prompt file aggregator Name - or simply single file name','s');
+    switch a
+        case a(end-2:end) == 'lsx'
+            [Names, Footprints]= xlsread(strcat(p,'a'),'A2:B79');
+            flag.c3d = 1;
+        case a(end-2:end) == 'txt'
+            Data = load(strcat(p,'a'));
+            Names =1;
+            flag.txt = 1;
+    end       
 end
 
 
@@ -45,7 +56,9 @@ I = input("Prompt path to directory, default (press Enter) is C:\Users\nhareng\D
 if isempty(I)
     % Déf du dossier contenant les données précalculées :
     % i.e. les Poulaines utilisées comme cible, elles mêmes issues des
-    % trajectoires angulaires de chaque fichier
+    % trajectoires angulaires de chaque fichier .c3d de la BDD
+    % TL&DR : Les trajectoires initiales déformées par l'algo et ciblées
+    % dans certains cas
     PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\';
     presets = 0;
 elseif I=='0'
@@ -56,7 +69,8 @@ else
 end
 
 % Si pas de données précalculées, faire tourner une fois en mettant presets
-% à 1.
+% à 1. - Dégueu, mais utilisé pour l'instant 
+
 % Première phase : Pour chaque fichier .c3d répertorié dans l'excel : -> Extraire les
 % données des marqueurs pendant le cycle de marche, lancer l'algo, puis sauver le résultat.
 for ii=length(Names)%1%:11:length(Names)
@@ -128,7 +142,9 @@ for ii=length(Names)%1%:11:length(Names)
         elseif flag.c3d
             for j = 3:size(b,1)
                 tempName = b{j};
-                tempName = tempName(end-3:end);
+                if size(tempName) > 4
+                    tempName = tempName(end-3:end);
+                end
                 switch tempName
                     case 'RFWT'
                         markers.RFWT = Tmp{j};
@@ -169,34 +185,10 @@ for ii=length(Names)%1%:11:length(Names)
         C3DUpdate2;
         
     elseif flag.txt
-        dd = load(strcat(p,''));
-        Pelv1=dd(1,:);	
-        Pelv2g=dd(2,:);
-        Pelv4g=dd(3,:);
-        Pelv5g=dd(4,:);
-        Fem1g=dd(5,:);
-        Fem9g=dd(6,:);
-        Fem10g=dd(7,:);
-        Fem6g=dd(8,:);
-        Tib5g=dd(9,:);
-        Tib6g=dd(10,:);
-        Tib1g=dd(11,:);
-        Tal2g=dd(12,:);
-        Tal3g=dd(13,:);
-        Tal1g=dd(14,:);
-        Pelv2d=dd(15,:);
-        Pelv4d=dd(16,:);
-        Pelv5d=dd(17,:);
-        Fem1d=dd(18,:);
-        Fem9d=dd(19,:);
-        Fem10d=dd(20,:);
-        Fem6d=dd(21,:);
-        Tib5d=dd(22,:);
-        Tib6d=dd(23,:);
-        Tib1d=dd(24,:);
-        Tal2d=dd(25,:);
-        Tal3d=dd(26,:);
-        Tal1d=dd(27,:);
+        Period = 100;
+
+        markers = HobisDataParser(Data);
+       
 
     end
     
