@@ -13,6 +13,7 @@ flag = struct;
 flag.c3d = 0;
 flag.txt = 0;
 flag.dyn = 0;
+flag.prints =0;
 
 
 I = input("Prompt path to data directory and press Enter, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\ \n", 's');
@@ -29,14 +30,15 @@ if isempty(I)
 else
     % Chemin d'accès spécifié par l'utilisateur
     p = I;
-    a = prompt('Prompt file aggregator Name - or simply single file name','s');
-    switch a
-        case a(end-2:end) == 'lsx'
+    p='C:\Users\nhareng\Documents\Prog\Matlab\Test\warping 2006\';
+    a = input('Prompt file aggregator Name (.xlsx) - or simply single file name (.txt)\n','s');
+    switch a(end-2:end)
+        case 'lsx'
             [Names, Footprints]= xlsread(strcat(p,'a'),'A2:B79');
             flag.c3d = 1;
-        case a(end-2:end) == 'txt'
-            Data = load(strcat(p,'a'));
-            Names =1;
+        case 'txt'
+            Data = load(strcat(p,a));
+            Names ={a(1:end-4)};
             flag.txt = 1;
     end       
 end
@@ -60,12 +62,12 @@ if isempty(I)
     % TL&DR : Les trajectoires initiales déformées par l'algo et ciblées
     % dans certains cas
     PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\';
-    presets = 0;
+    flag.presets = 0;
 elseif I=='0'
-    presets = 1;
+    flag.presets = 1;
 else
     PathPreSet = I;
-    presets = 0;    
+    flag.presets = 0;    
 end
 
 % Si pas de données précalculées, faire tourner une fois en mettant presets
@@ -192,7 +194,7 @@ for ii=1:length(Names)%1%:11:length(Names)
         markers = HobisDataParser(Data);
     end
     
-    if presets
+    if flag.presets
         close all;
         save(strcat(PathPreSet,Names{ii},'.mat'),'PN','Pol','Param', 'R_monde_local','R_Pelvis_monde_local', 'R_LFem_ref_local', 'R_LTib_ref_local', 'R_RFem_ref_local', 'R_RTib_ref_local');
 %     if flag.dyn
@@ -219,6 +221,12 @@ for ii=1:length(Names)%1%:11:length(Names)
                     close all;
                     
                     % Sauvegarde des données dans des .mat importables
+                    save(strcat(dirname,'\',Names{jj},'P','.mat'),'Param','Saved','SNPCA','GT','Conv','PFin','TAFin','X','mem','Iflag','Storing')
+                else
+                    PreLoop;
+                    Loop_Batch;
+                    close all; % Just in case
+                    
                     save(strcat(dirname,'\',Names{jj},'P','.mat'),'Param','Saved','SNPCA','GT','Conv','PFin','TAFin','X','mem','Iflag','Storing')
                 end
             end
