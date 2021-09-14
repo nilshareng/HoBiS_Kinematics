@@ -73,7 +73,7 @@ end
 
 % Première phase : Pour chaque fichier .c3d répertorié dans l'excel : -> Extraire les
 % données des marqueurs pendant le cycle de marche, lancer l'algo, puis sauver le résultat.
-for ii=length(Names)%1%:11:length(Names)
+for ii=1:length(Names)%1%:11:length(Names)
     
     % Création d'un dossier pour cette marche - là où vont être stockées toutes les données calculées
     dirname= strcat(SavePath,Names{ii});
@@ -104,10 +104,13 @@ for ii=length(Names)%1%:11:length(Names)
         % Sélection G/D - FWT BWT KNE KNI ANE ANI
         
         % Récupération des noms des marqueurs
-        b= fieldnames(premarkers);
+        b = fieldnames(premarkers);
         if flag.dyn
             for j = 1:size(b,1)
                 tempName = b{j};
+                if size(tempName,2) > 4
+                    tempName = tempName(end-3:end);
+                end
                 %             tempName = tempName(end-3:end);
                 switch tempName
                     case 'RASIS'
@@ -142,7 +145,7 @@ for ii=length(Names)%1%:11:length(Names)
         elseif flag.c3d
             for j = 3:size(b,1)
                 tempName = b{j};
-                if size(tempName) > 4
+                if size(tempName,2) > 4
                     tempName = tempName(end-3:end);
                 end
                 switch tempName
@@ -186,10 +189,7 @@ for ii=length(Names)%1%:11:length(Names)
         
     elseif flag.txt
         Period = 100;
-
         markers = HobisDataParser(Data);
-       
-
     end
     
     if presets
@@ -206,7 +206,7 @@ for ii=length(Names)%1%:11:length(Names)
 %         fclose(fileID);
 %     end
     else
-        for jj =length(Names)%1:length(Names)-1
+        for jj =1:length(Names)%1:length(Names)-1
             jj
             % Deuxième phase, à la marche courante, on va successivement appliquer
             % les autres marches en tant que cibles.
