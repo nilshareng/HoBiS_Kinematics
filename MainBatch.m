@@ -187,11 +187,13 @@ for ii=1:length(Names)%1%:11:length(Names)
         % Marqueurs acquis, Lancement de la première phase de l'algorithme :
         % Créations des repères articulaires, Filtrage, Cinématique Inverse et
         % Approximation par Splines
+        
         C3DUpdate2;
         
     elseif flag.txt
         Period = 100;
-        markers = HobisDataParser(Data);
+        [markers, Param] = HobisDataParser(Data);
+        C3DUpdate2;
     end
     
     if flag.presets
