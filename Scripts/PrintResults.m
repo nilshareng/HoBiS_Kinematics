@@ -7,14 +7,18 @@ clear all;
 close all;
 clc;
 
+% Chemin à l'excel contenant la liste des .c3d
 path = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\Classement_Pas.xlsx';
 [~, Names] = xlsread(path,'A2:D79');
 
+% Chemin des Presets
 PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewPresets\';
+% Chemin des Résultats calculés dans MainBatch
 SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\SameName\';
 % SavePath2 = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\7 - Self\';
 % SavePath2 = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\Old\SameName\';
 
+% Chemin de la BDD de .c3d
 p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
 d = dir(strcat(p,'*012.c3d'));
 
