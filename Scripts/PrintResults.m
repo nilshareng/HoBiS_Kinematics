@@ -7,15 +7,15 @@ clear all;
 close all;
 clc;
 
-path = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\BDD\Classement_Pas.xlsx';
+path = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\Classement_Pas.xlsx';
 [~, Names] = xlsread(path,'A2:D79');
 
-PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\';
-SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\12\';
+PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewPresets\';
+SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\SameName\';
 % SavePath2 = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\7 - Self\';
-SavePath2 = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\12\';
+% SavePath2 = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\Old\SameName\';
 
-p = 'C:\Users\nhareng\Desktop\BDD AH Marche\BDD\';
+p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
 d = dir(strcat(p,'*012.c3d'));
 
 cind =0;
@@ -23,16 +23,16 @@ cind =0;
 M1 = [];
 
 % Affichage des données pour les cas de convergence
-for ii=1%:length(d)
-    
-    load(strcat(PathPreSet,Names{1+11*(ii-1)},'.mat'));
+for ii=1:length(d)
+    v = Names{1+11*(ii-1)};
+    load(strcat(PathPreSet,v,'.mat'));
     POrig = PN;
     clear Pol;
-    
-    d2 = dir(strcat(SavePath,Names{1+11*(ii-1)},'\','*.mat'));
+   
+    d2 = dir(strcat(SavePath,v,'\','*.mat'));
     for jj = 1:length(d2)
         if jj==1
-            load(strcat(SavePath2,Names{1+11*(ii-1)},'\',d2(jj).name));
+            load(strcat(SavePath,Names{1+11*(ii-1)},'\',d2(jj).name));
             [~,Ind]= min(Conv(1,5:end));
             Ind = Ind+4;
         else
@@ -181,17 +181,17 @@ for ii=1%:length(d)
         else
         end
         
-        %     figure;
-        %     hold on;
-        %     subplot(3,1,1);
-        %     plot(1:size(Conv,2),Conv(1,1:end),'rx');
-        %     subplot(3,1,2);
-        %     plot(1:size(Conv,2),Conv(2,1:end),'rx');
-        %     subplot(3,1,3);
-        %     plot(1:size(Conv,2),Conv(3,1:end),'rx');
-        %
-        %     pause;
-%         close all;
+%             figure;
+%             hold on;
+%             subplot(3,1,1);
+%             plot(1:size(Conv,2),Conv(1,1:end),'rx');
+%             subplot(3,1,2);
+%             plot(1:size(Conv,2),Conv(2,1:end),'rx');
+%             subplot(3,1,3);
+%             plot(1:size(Conv,2),Conv(3,1:end),'rx');
+%         
+%             pause;
+        close all;
     end
     
     
