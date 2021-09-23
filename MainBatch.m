@@ -28,13 +28,13 @@ if isempty(I)
     [BornesMarche, Names] = xlsread(strcat(p,'Classement_Pas.xlsx'),'A2:D79');
     flag.c3d = 1;
 else
-    % Chemin d'accès spécifié par l'utilisateur
+    % Chemin d'accès spécifié par l'utilisateur 
     p = I;
     p='C:\Users\nhareng\Documents\Prog\Matlab\Test\warping 2006\';
     a = input('Prompt file aggregator Name (.xlsx) - or simply single file name (.txt)\n','s');
     switch a(end-2:end)
         case 'lsx'
-            [Names, Footprints]= xlsread(strcat(p,'a'),'A2:B79');
+            [Names, Footprints]= xlsread(strcat(p,a),'A2:B79');
             flag.c3d = 1;
         case 'txt'
             Data = load(strcat(p,a));
@@ -222,7 +222,7 @@ for ii=1:length(Names)%1%:11:length(Names)
                     Loop_Batch;
                     close all;
                     
-                    % Sauvegarde des données dans des .mat importables
+                     % Sauvegarde des données dans des .mat importables
                     save(strcat(dirname,'\',Names{jj},'P','.mat'),'Param','Saved','SNPCA','GT','Conv','PFin','TAFin','X','mem','Iflag','Storing')
                 else
                     PreLoop;

@@ -1,8 +1,10 @@
-function markers = HobisDataParser(Data)
+function [markers, Param]= HobisDataParser(Data)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 markers = struct;
 dd = Data;
+
+Param = zeros(6,3);
 % Ancien parser de 'JeuEssaiDM'
 Pelv1=dd(1,:);	
 Pelv2g=dd(2,:);
@@ -39,19 +41,21 @@ Tal2d=dd(25,:);
 Tal3d=dd(26,:);
 Tal1d=dd(27,:);
 
+Param = [Fem1g',Fem6g',Tal1g', Fem1d', Fem6d', Tal1d']/1000;
+
 
 markers.RFWT = Pelv4d;
 markers.LFWT = Pelv4g;
 markers.RBWT = Pelv5d;
 markers.LBWT = Pelv5g;
-markers.LKNE = Fem10g;
 markers.RKNE = Fem10d;
-markers.LKNI = Tib5d;
-markers.RKNI = Tib5g;
-markers.LANE = Tal2d;
-markers.RANE = Tal2g;
-markers.LANI = Tal3d;
-markers.RANI = Tal3g;
+markers.LKNE = Fem10g;
+markers.RKNI = Tib5d;
+markers.LKNI = Tib5g;
+markers.RANE = Tal2d;
+markers.LANE = Tal2g;
+markers.RANI = Tal3d;
+markers.LANI = Tal3g;
 
 end
 
