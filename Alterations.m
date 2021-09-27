@@ -85,14 +85,15 @@ PosCheckIni = fcine_numerique_H2(anglesR2I,Param(:,1)',Param(:,2)',Param(:,3)',P
 % IK :
 J = [];
 % PosC = model.gait(1,:);
-PosC = AnglesCheckIni;
+PosC = PosCheckIni;
 deltaX = 0;
-Angles = anglesR2I;
+Angles = zeros((max(size(model.gait)))+1,11);
+Angles(1,:) = anglesR2I';
 
-for i = 1:(max(size(model.gait))+1)
+for i = 1:(max(size(model.gait)))
     
-    if i == (max(size(model.gait))+1)
-        TargetX = model.gait(1,:);
+    if i == (max(size(model.gait)))
+        TargetX = model.gait(1,:)';
     else
         TargetX = model.gait(i+1,:)';
     end
@@ -104,24 +105,54 @@ for i = 1:(max(size(model.gait))+1)
     NAngles = pinv(J) * deltaX;
     
     PosC = fcine_numerique_H2(NAngles,Param(:,1)',Param(:,2)',Param(:,3)',Param(:,4)',Param(:,5)',Param(:,6)', R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
-    Angles = [Angles ; NAngles];
+    Angles(i+1,:) = NAngles';
 end
-
+Angles = Angles(1:end-1,:);
 rate = 60;
 
 % Approximation par spline des Traj Angulaires
-
+PolA = [];
 for i = 1:11
-        SplinedAngles(:,i) = Curve2Spline(Angles(:,i));
+        [SplinedAngles(:,i) , PolT] = Curve2Spline(Angles(:,i));
+        PolA = [PolA ; [i*ones(size(PolT(:,2:end),1),1) , PolT(:,2:end)]];
 end
 % Symetrisation
 SplinedAngles = GaitSymetrisation(SplinedAngles);
 
 % Expression de la poulaine correspondante à l'approximation TA
-ComputedPoulaine
+ComputedPoulaine =[];
 for i = 1:max(size(SplinedAngles))
-    ComputedPoulaine = fcine
+    ComputedPoulaine = [ComputedPoulaine ; fcine_numerique_H2(Angles(i,:),Param(:,1)',Param(:,2)',Param(:,3)',Param(:,4)',Param(:,5)',Param(:,6)', R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local)];
 end
+
+% NewSplines
+PolP = [];
+SplinedComputedPoulaine = [];
+for i = 1:11
+        [SplinedComputedPoulaine(:,i), PolT] = Curve2Spline(ComputedPoulaine(:,i))';
+        PolP = [PolP ; [i*ones(size(PolT(:,2:end),1),1) , PolT(:,2:end)]];
+end
+
+% Affichages comparatif
+
+if flag.prints
+       figure;
+       hold on;
+       title('Comparison loaded poulaine vs Spline poulaine');
+       for i = 1:6
+           subplot(2,3,i)
+           hold on;
+           plot(InitialGait(:,i));
+           plot(SplinedPoulaine(:,i));
+           plot(ComputedPoulaine(:,i));
+           plot(SplinedComputedPoulaine(:,i));
+       end
+end
+
+PN = SplinedComputedPoulaine;
+
+
+
 % 
 
 
