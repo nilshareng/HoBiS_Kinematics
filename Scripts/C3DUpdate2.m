@@ -108,12 +108,12 @@ end
 % leftHipZ = ((LFWTz + RFWTz) x 0,5  ) - 0,096 x [norm(LANI - LKNE) + norm(LKNE - LFWT) 
 % 
 
-    % Posture de description
-    
-    % Points to consider per joint
-    % Les 'Cond' font le tri dans les positions de marqueurs pour éliminer
-    % les occultations
-    
+% Posture de description
+
+% Points to consider per joint
+% Les 'Cond' font le tri dans les positions de marqueurs pour éliminer
+% les occultations
+if ~flag.txt
     Cond = ones(N_frame,1) - ( (markers.LANI(:,1)==0)&(markers.LANI(:,2)==0)&(markers.LANI(:,3)==0)  |   (markers.LKNE(:,1)==0)&(markers.LKNE(:,2)==0)&(markers.LKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
     Fem1g = mean(Articular_Centre.LHip(find(Cond),:))*SPix;
     
@@ -132,13 +132,20 @@ end
     Cond = ones(N_frame,1) - ( (markers.RANE(:,1)==0)&(markers.RANE(:,2)==0)&(markers.RANE(:,3)==0)  |   (markers.RANI(:,1)==0)&(markers.RANI(:,2)==0)&(markers.RANI(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
     Tal1d = [Fem1d(1) Fem1d(2) (mean((markers.RANE(find(Cond),3)) + markers.RANI(find(Cond),3))*0.5 -  mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
     
-%Franck : symétrisation du squelette; inverser la composante latérale; dans
-%le repère monde, ça correspond à Y, comme Z est vers le haut et X vers
-%l'avant
-Fem1d=Fem1g; Fem1d(2)=-Fem1d(2); 
-Fem6d=Fem6g; Fem6d(2)=-Fem6d(2);
-Tal1d=Tal1g; Tal1d(2)=-Tal1d(2);
-
+    %Franck : symétrisation du squelette; inverser la composante latérale; dans
+    %le repère monde, ça correspond à Y, comme Z est vers le haut et X vers
+    %l'avant
+    Fem1d=Fem1g; Fem1d(2)=-Fem1d(2);
+    Fem6d=Fem6g; Fem6d(2)=-Fem6d(2);
+    Tal1d=Tal1g; Tal1d(2)=-Tal1d(2);
+else
+    Fem1g = Param(:,1)';
+    Fem6g = Param(:,2)';
+    Tal1g = Param(:,3)';
+    Fem1d = Param(:,4)';
+    Fem6d = Param(:,5)';
+    Tal1d = Param(:,6)';
+end
 %% Vérif
 % 
 % Rep = [Tal1d', Fem6d', Fem1d', zeros(3,1) , Fem1g' , Fem6g' , Tal1g'];
@@ -168,14 +175,18 @@ Tal1d=Tal1g; Tal1d(2)=-Tal1d(2);
 CreationRepere;
 
 %%% Filtrage et périodisation Angles
-
-FiltragePeriod;
-
+if ~flag.txt
+    FiltragePeriod;
+else
+    % Si initialisation par .txt, chargement marche ini, empreintes cibles, IK Desr - Ref, IK Ref - PI marche ini 
+    Alterations;
+end
 %%% Approximation en Splines
-
-ApproxSpline;
-
-
+if ~flag.txt
+    ApproxSpline;
+else
+    % Mb nothing, depends on prev loop
+end
 
 
 
