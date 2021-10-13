@@ -1,0 +1,11 @@
+function cost = KinforMin(Angles,Target,Param,Reperes)
+%UNTITLED5 Summary of this function goes here
+%   Detailed explanation goes here
+delta = Target - fcineshort(Angles,Param,Reperes);
+J = Jac(Angles, Param, Reperes);
+NA = pinv(J)*delta;
+
+
+cost = norm(Target - fcineshort(NA,Param,Reperes));
+end
+

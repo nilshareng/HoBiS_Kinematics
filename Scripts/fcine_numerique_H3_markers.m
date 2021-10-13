@@ -1,9 +1,11 @@
-function [res,Save,markers]=fcine_numerique_H3(P,Fem1g,Fem6g,Tal1g,Fem1d,Fem6d,Tal1d, R_monde_local, R_Pelvis_monde, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local)
+function [res,Save,Nmarkers]=fcine_numerique_H3_markers(P,markers,Fem1g,Fem6g,Tal1g,Fem1d,Fem6d,Tal1d, R_monde_local, R_Pelvis_monde, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local)
 % Fonction cinématique du modèle
 % Entrée : Angles P et paramètres physiologiques Fem...
 % Param en ligne
 % Sortie : Les positions des chevilles simulées
 % Franck : intégration des rotations anatomiques initiales
+
+newmarkers = markers;
 
 % Parseur
 rxb=P(1);
@@ -100,7 +102,20 @@ end
 Mpass=Mpass*matzgg;
 
 ttz=Tal1g;
-ttz = (R_Pelvis_monde * R_LFem_ref_local * R_LTib_ref_local)^-1 * [ttz';1];
+MtransiTib = (R_Pelvis_monde * R_LFem_ref_local * R_LTib_ref_local)^-1;
+newmarkers.RKNI
+newmarkers.LKNI
+newmarkers.RANE
+newmarkers.RANI
+newmarkers.LANE
+newmarkers.LANI
+
+newmarkers.RANE
+newmarkers.RANI
+newmarkers.LANE
+newmarkers.LANI
+;
+ttz = MtransiTib * [ttz';1];
 % ttz=(R_Pelvis_monde*R_LFem_ref_local^-1*R_LTib_ref_local)'*ttz'; % A modif car Fem & Tib non ortho dir 
 % MPass = MPass(1:3,1:3) *  ttz';
 % matF6T1g=[1 0 0 ttz(1) ; 0 1 0 ttz(2) ;0 0 1 ttz(3) ; 0 0 0 1];
@@ -109,6 +124,8 @@ ttz = (R_Pelvis_monde * R_LFem_ref_local * R_LTib_ref_local)^-1 * [ttz';1];
 % Save = [Save , [3;Mpass(1:3,4)]];
 ttz = Mpass *  ttz;
 Save = [Save , [3;ttz(1:3)]];
+
+
 
 
 % Bilan : Fonction de cinematique directe : 

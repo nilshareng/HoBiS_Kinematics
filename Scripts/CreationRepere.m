@@ -139,7 +139,7 @@ if ~flag.txt
     Fem6d=Fem6g; Fem6d(2)=-Fem6d(2);
     Tal1d=Tal1g; Tal1d(2)=-Tal1d(2);
 
-
+end
 %% Création des différents repères articulaires et calcul des angles
 
 

@@ -1,0 +1,19 @@
+function NewAngles = IK(Targets, Threshold, Angles, Param, Reperes)
+%UNTITLED4 Summary of this function goes here
+%   Detailed explanation goes here
+
+if size(Angles,1)==1
+   Angles = Angles';
+end
+if
+
+CurrentPos = fcineshort(Angles, Param, Reperes);
+NewAngles = Angles;
+d= 0.001;
+for i = 1:size(Targets,1)
+    NAngles=  NewAngles(:,end);
+    NewAngles =[NewAngles, fminsearch(@(Angles) KinforMin(Angles,Targets(i,:),DParam,DReperes),NAngles,options)];
+end
+    
+end
+
