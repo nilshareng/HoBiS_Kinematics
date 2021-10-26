@@ -78,7 +78,7 @@ R_RTib_ref_local = r6;
 
 % Target X Setup :
 
-if ~flag.prints
+if ~flag.steps
     
     [~,ag] = min(GT(:,1));
     [~,bg] = max(GT(:,1));
@@ -123,10 +123,54 @@ if ~flag.prints
         X(:,3:5) = X(:,3:5) + 0.01*(R/norm(R));
     end
     
+% elseif 
+%     % X format : 6*5 ; Xd;Yd;Zd;Xg;Yg;Zg - CurveN°(1-6) , %ofStepTime , X,Y,Z  
+%     X = [2;2;3;5;5;6];
+%     X = [X, model.prints];
 else
-    % X format : 6*5 ; Xd;Yd;Zd;Xg;Yg;Zg - CurveN°(1-6) , %ofStepTime , X,Y,Z  
+    GT = PN;
+     [~,ag] = min(GT(:,1));
+    [~,bg] = max(GT(:,1));
+    [~,cg] = min(GT(:,3));
+    
+    [~,ad] = min(GT(:,4));
+    [~,bd] = max(GT(:,4));
+    [~,cd] = min(GT(:,6));
+    
+    % A = [ag;bg;cg;mod(ag+mid,Period);mod(bg+mid,Period);mod(cg+mid,Period)];
+    % A = [ag;bg;cg;ad;bd;cd];
+    A = [ag;bg;cg];
+    A = [A ; mod(A+mid+1,Period)+1];
+    if ~isempty(A==0)
+        % 1-périodicité, pour éviter un indice 0 dans une ancienne méthode
+        A(A==0) = Period;
+    end
+    
+    % Création du vecteur des points cibles - X
+    % La première colonne repère la courbe dont est issu le point originalement.
+    % C'était pour le calcul des tangentes, mais c'est pas utile actuellement.
     X = [2;2;3;5;5;6];
-    X = [X, model.prints];
+    X = [X , (A-1)/Period];
+    X = [X , [GT(A(1:3),1:3) ; GT(A(4:6),4:6)]];
+    
+    
+    % Introduction d'un delta -> tests
+    % X(1,3) = X(1,3) + 0.1;
+    % X(4,3) = X(4,3) + 0.1;
+    
+    % X(1,2) = X(1,2) + 0.1;
+    % X(4,2) = X(4,2) + 0.1;
+    
+    % X(1,3) = X(1,3) + 0.05;
+    % X(4,3) = X(4,3) + 0.05;
+    
+    % X(1,3) = X(1,3) + 0.01;
+    % X(4,3) = X(4,3) + 0.01;
+    
+    if ii==jj
+        R = rand(6,3);
+        X(:,3:5) = X(:,3:5) + 0.01*(R/norm(R));
+    end
 end
 
 
