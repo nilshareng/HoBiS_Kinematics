@@ -15,67 +15,138 @@ flag.txt = 0;
 flag.dyn = 0;
 flag.prints =0;
 
+%% Input part
 
-I = input("Prompt path to data directory and press Enter, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\ \n", 's');
+prompt = ...
+    {'Enter Ressources directory (absolute) path:',...
+    'Enter Description Posture file (absolute) path:',...
+    'Enter Reference Posture file (absolute) path:',...
+    'Enter PreSets files directory (absolute) path:',...
+    'Initial Poulaine (absolute) path:',...
+    'Model Mass:', ...
+    'Model Articular Range of Motion Min Boundaries in degrees (Pelv*3, LHip*3, LKnee*1, RHip*3, RKnee*1):',...
+    'Model Articular Range of Motion Max Boundaries in degrees (Pelv*3, LHip*3, LKnee*1, RHip*3, RKnee*1):',...
+    'Footprints (target) footstrike (gait% X Y Z):',...
+    'Footprints (target) toe off (gait% X Y Z):',...
+    'Footprints (target) min Z (gait% X Y Z):'...
+    'Enter Save folder Path:'};
+dlgtitle = 'Inputs';
+dims = [1 110];
+definput = {'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\',...
+    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\description.txt',...
+    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\reference.txt',...
+    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\',...
+    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\poulaineAppui.txt',...
+    '70',...
+    '[45 45 45 20 45 30 110 20 45 30 110]',...
+    '[-45 -45 -45 -90 -30 -60 15 -90 -30 -60 15]',...
+    '[0.2000    0.0650   -0.0188   -0.7755]',...
+    '[0.7333    0.1135    0.0585   -0.6367]',...
+    '[0.2833    0.0656    0.0595   -0.7840]'...
+    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Txt'};
+answer = inputdlg(prompt,dlgtitle,dims,definput);
 
-if isempty(I) %|| 1
-    % Chemin d'accès par défaut : .c3d et à l'excel compilant les données de marche :
-    p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
-    
-    % Récupération des données de l'excel:
-    % Format : Nom fichier / Frame début et fin cycle de marche / Frame initiale
-    % BornesMarches = Chiffres (BorneSup,BorneInf,FrameIni) ; Names = Noms
-    [BornesMarche, Names] = xlsread(strcat(p,'Classement_Pas.xlsx'),'A2:D79');
-    flag.c3d = 1;
-else
-    % Chemin d'accès spécifié par l'utilisateur
-    p = I;
-    p='C:\Users\nhareng\Documents\Prog\Matlab\Test\warping 2006\';
-    p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\';
-    a = input('Prompt Des file aggregator Name (.xlsx) - or simply single file name des (.txt)\n','s');
-    b = input('Prompt Ref file aggregator Name (.xlsx) - or simply single file name ref (.txt)\n','s');
-    switch a(end-2:end)
-        case 'lsx'
-            [Names, Footprints]= xlsread(strcat(p,a),'A2:B79');
-            flag.c3d = 1;
-        case 'txt'
-            DataDes = load(strcat(p,a));
-            DataRef = load(strcat(p,b));
-            Names ={a(1:end-4)};
-            flag.txt = 1;
-    end
-end
-%  p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
+model = struct;
 
-% Déf du dossier de récéption des données calculées pour ce batch
-I = input("Prompt path to save directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\ \n", 's');
+p = answer{1};
+DataDes = load(answer{2});
+model.description = DataDes;
 
-if isempty(I)
-    SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\';
-else
-    SavePath = I;
-end
+DataRef = load(answer{3});
+model.reference = DataRef;
 
-%%% Need to setup 'p' 'SavePath' 'flag.txt' 'PathPreSet' 'flag.presets'
-
-
-I = input("Prompt path to presets directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\ \n", 's');
-
-if isempty(I)
-    % Déf du dossier contenant les données précalculées :
-    % i.e. les Poulaines utilisées comme cible, elles mêmes issues des
-    % trajectoires angulaires de chaque fichier .c3d de la BDD
-    % TL&DR : Les trajectoires initiales déformées par l'algo et ciblées
-    % dans certains cas
-    PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\';
-    flag.presets = 0;
-elseif I=='0'
-    PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\';
+if isempty(answer{4})
     flag.presets = 1;
+    mkdir p 'Presets'
+    PathPreSet = strcat(answer{1},'Presets\');
 else
-    PathPreSet = I;
+    PathPreSet = answer{4};
     flag.presets = 0;
 end
+
+model.gait = load(answer{5});
+
+M = str2double(answer{6});
+
+model.jointRangesMin = str2num(answer{7});
+model.jointRangesMax = str2num(answer{8});
+
+X = [str2num(answer{9}) ; str2num(answer{10}) ; str2num(answer{11})];
+X = [[2;2;3] , X];
+flag.steps = 1;
+flag.txt = 1;
+SavePath = answer{12};
+Names = {DataDes(1:end-4)};
+
+
+%%% Variables to set : p , PathPreSet, Desc
+
+
+%%
+% 
+% 
+% I = input("Prompt path to data directory and press Enter, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\ \n", 's');
+% 
+% if isempty(I) %|| 1
+%     % Chemin d'accès par défaut : .c3d et à l'excel compilant les données de marche :
+%     p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
+%     
+%     % Récupération des données de l'excel:
+%     % Format : Nom fichier / Frame début et fin cycle de marche / Frame initiale
+%     % BornesMarches = Chiffres (BorneSup,BorneInf,FrameIni) ; Names = Noms
+%     [BornesMarche, Names] = xlsread(strcat(p,'Classement_Pas.xlsx'),'A2:D79');
+%     flag.c3d = 1;
+% else
+%     % Chemin d'accès spécifié par l'utilisateur
+%     p = I;
+%     p='C:\Users\nhareng\Documents\Prog\Matlab\Test\warping 2006\';
+%     p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\';
+%     a = input('Prompt Des file aggregator Name (.xlsx) - or simply single file name des (.txt)\n','s');
+%     b = input('Prompt Ref file aggregator Name (.xlsx) - or simply single file name ref (.txt)\n','s');
+%     switch a(end-2:end)
+%         case 'lsx'
+%             [Names, Footprints]= xlsread(strcat(p,a),'A2:B79');
+%             flag.c3d = 1;
+%         case 'txt'
+%             DataDes = load(strcat(p,a));
+%             DataRef = load(strcat(p,b));
+%             Names ={a(1:end-4)};
+%             flag.txt = 1;
+%     end
+% end
+% %  p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
+% 
+% % Déf du dossier de récéption des données calculées pour ce batch
+% I = input("Prompt path to save directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\ \n", 's');
+% 
+% if isempty(I)
+%     SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\';
+% else
+%     SavePath = I;
+% end
+% 
+% %%% Need to setup 'p' 'SavePath' 'flag.txt' 'PathPreSet' 'flag.presets'
+% 
+% 
+% I = input("Prompt path to presets directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\ \n", 's');
+% 
+% if isempty(I)
+%     % Déf du dossier contenant les données précalculées :
+%     % i.e. les Poulaines utilisées comme cible, elles mêmes issues des
+%     % trajectoires angulaires de chaque fichier .c3d de la BDD
+%     % TL&DR : Les trajectoires initiales déformées par l'algo et ciblées
+%     % dans certains cas
+%     PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\';
+%     flag.presets = 0;
+% elseif I=='0'
+%     PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\';
+%     flag.presets = 1;
+% else
+%     PathPreSet = I;
+%     flag.presets = 0;
+% end
+
+%%
 
 % Si pas de données précalculées, faire tourner une fois en mettant presets
 % à 1. - Dégueu, mais utilisé pour l'instant
@@ -86,7 +157,7 @@ for ii=1:length(Names)%1%:11:length(Names)
     
     % Création d'un dossier pour cette marche - là où vont être stockées toutes les données calculées
     dirname= strcat(SavePath,Names{ii});
-    mkdir(dirname);
+%     mkdir(dirname);
     
     
     if flag.c3d
@@ -297,6 +368,7 @@ for ii=1:length(Names)%1%:11:length(Names)
                     save(strcat(dirname,'\',Names{jj},'P','.mat'),'Param','Saved','SNPCA','GT','Conv','PFin','TAFin','X','mem','Iflag','Storing')
                 else
                     if flag.txt
+                        Alterations;
                         
                     end
                     PreLoop;

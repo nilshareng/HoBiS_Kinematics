@@ -1,27 +1,15 @@
 %%% Handles the difference between loading a .c3d walk and a simple model
 
-model = struct;
+% model = struct;
 
 % p = 'C:\Users\nhareng\Documents\Prog\Matlab\Test\warping 2006\';
 % Param = [Fem1g',Fem6g',Tal1g', Fem1d', Fem6d', Tal1d'];
 
 % Load Model - Posture Description
 
-model.description = DataDes;
 
 % Load Model - Posture Reference
 
-model.reference = DataRef;
-flag.steps = 0;
-
-if flag.steps
-    model.prints = load(strcat(p,'prints.txt'));
-    X = model.prints;
-else
-    warning('default footsteps taken : antho012')
-    load(strcat(PathPreSet,'antho012.mat'));
-    model.prints = X;
-end
 % % Load Tracks - Empreintes Cibles 2 XYZ coordinates, in Pelvic frame coordinates 
 
 % flag.prints = 0;
@@ -37,9 +25,9 @@ InitialGaitPath = strcat(p,'poulaineAppui.txt');
 
 if strcmp(InitialGaitPath(:,end-2:end),'mat')
     
-SelectedPreset = 'antho012.mat';
-load(strcat(PathPreSet,SelectedPreset));
-Period = length(PN);
+    SelectedPreset = 'antho012.mat';
+    load(strcat(PathPreSet,SelectedPreset));
+    Period = length(PN);
 
 elseif strcmp(InitialGaitPath(:,end-2:end),'txt')
 
@@ -73,8 +61,8 @@ elseif strcmp(InitialGaitPath(:,end-2:end),'txt')
 end
 
 % Load Joint ranges
-model.jointRangesMax =[-45; -45; -45; -90; -30; -60; 15; -90; -30; -60; 15]*pi/180;
-model.jointRangesMin=[45; 45; 45; 20; 45; 30; 110; 20; 45; 30; 110]*pi/180;
+% model.jointRangesMax =[-45; -45; -45; -90; -30; -60; 15; -90; -30; -60; 15]*pi/180;
+% model.jointRangesMin=[45; 45; 45; 20; 45; 30; 110; 20; 45; 30; 110]*pi/180;
 Tmp = [];
 for i = 1: size(model.gait,1)
     Tmp = [Tmp, [RReperes.Monde(1:3,1:3)^-1 * model.gait(i,1:3)' ; RReperes.Monde(1:3,1:3)^-1 * model.gait(i,4:6)']];
@@ -102,8 +90,8 @@ anglesR2I = zeros(11,1);
 % IK :
 
 J = [];
-% PosC = model.gait(1,:);
-PosC = a;
+PosC = model.gait(1,:);
+% PosC = a;
 deltaX = 0;
 Angles = zeros(((max(size(model.gait)))+1)*10,11);
 Angles(1,:) = anglesR2I';
@@ -477,7 +465,7 @@ end
 % Setting up variables to plug into the PreLoop / Loop
 PN = SplinedComputedPoulaine;
 
-GT = PN;
+GT = model.gait;
 Pol = PolA;
 mid = fix(max(size(SplinedComputedPoulaine,1))/2);
 NewCurve = SplinedAngles;
