@@ -6,18 +6,19 @@ printflag=0;
 
 OPN = PN;
 OPol=Pol;
-r1 = R_monde_local;
-r2 = R_Pelvis_monde_local;
-r3 = R_LFem_ref_local;
-r4 = R_LTib_ref_local;
-r5 = R_RFem_ref_local;
-r6 = R_RTib_ref_local;
+
 
 
 % Chargement du polynôme de la spline de la trajectoire angulaire et des paramètres physiologiques à cibler
 % On prend le polynôme et non directement la courbe, car le nombre de frame
 % par simulation - et donc l'échantillonage - change à chaque fichier...
 if ~flag.txt
+    r1 = R_monde_local;
+    r2 = R_Pelvis_monde_local;
+    r3 = R_LFem_ref_local;
+    r4 = R_LTib_ref_local;
+    r5 = R_RFem_ref_local;
+    r6 = R_RTib_ref_local;
     clear Pol;
 
     load(strcat(PathPreSet,Names{jj},'.mat'));
@@ -62,16 +63,19 @@ if ~flag.txt
     PN = OPN;
     Param = [Fem1g',Fem6g',Tal1g', Fem1d', Fem6d', Tal1d'];
     
+    R_monde_local = r1;
+    R_Pelvis_monde_local = r2;
+    R_LFem_ref_local = r3;
+    R_LTib_ref_local = r4;
+    R_RFem_ref_local = r5;
+    R_RTib_ref_local = r6;
 else
+    
+%     PN = SplinedPoulaine
     
 end
 
-R_monde_local = r1;
-R_Pelvis_monde_local = r2;
-R_LFem_ref_local = r3;
-R_LTib_ref_local = r4;
-R_RFem_ref_local = r5;
-R_RTib_ref_local = r6;
+
 
 
 %%%%%%%%%% Recherche des points cibles
