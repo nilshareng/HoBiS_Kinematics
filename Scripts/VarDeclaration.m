@@ -20,13 +20,18 @@ M = 70;
 
 % Calcul de l'erreur initiale commise sur la cible
 Ref = [];
-a = ErrorFun2(PolA,X,Param, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
+a = ErrorFun3(PolA,X,Sequence,Markers,Reperes);
 for i =1:size(X,1)
     Ref = [Ref; X(i,3:end)-a(i,:)];
 end
 
 % Coûts initiaux ie de référence en Jerk et EC. 
-CostRef = CE(Poul,TrajAng,M,Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
+if flag.txt
+    CostRef = CEShort(Poul,TrajAng,M,Markers,Reperes);
+else
+    CostRef = CE(Poul,TrajAng,M,Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
+end
+
 JerkRef = Jerk(PolA);
 
 % Variable pour mémoriser la somme des normes des erreurs commises sur X
@@ -83,13 +88,13 @@ ThreshJerk = 30;
 ThreshX = 0.01;
 
 % Seuil d'énergie cinétique - arbitrairement mis à 1/2 de la valeur ini
-threshCE = CE(Poul,TrajAng,M,Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local)/2;
+threshCE = CostRef/2;
 
 % Variable qui stocke les PCA à chaque cycle
 Storing =[];
 
 % Variable qui détermine les dt et dtheta respectivement dans les gradients et Jacobiennes
-dp = [0.001, 0.001];
+dp = [0.00001, 0.00001];
 
 % Pondération des tâches secondaires : JSter Jerk, VSter CE. Effet notable à partir de 10^5 - 10^6 
 VSter=-0.005;
@@ -98,12 +103,10 @@ JSter=-0.000;
 % Nombre de PCA réellement pris en compte, le reste est symétrisé
 s=7;
 
-Reperes = struct;
-Reperes.R_monde_local = R_monde_local;
-Reperes.R_Pelvis_monde_local = R_Pelvis_monde_local;
-Reperes.R_LFem_ref_local = R_LFem_ref_local;
-Reperes.R_LTib_ref_local = R_LTib_ref_local;
-Reperes.R_RFem_ref_local = R_RFem_ref_local;
-Reperes.R_RTib_ref_local = R_RTib_ref_local;
-
-
+% Reperes = struct;
+Reperes.R_monde_local = eye(3);
+Reperes.R_Pelvis_monde_local = Reperes.Pelvis(1:3,1:3);
+Reperes.R_LFem_ref_local = Reperes.LFemur1(1:3,1:3);
+Reperes.R_LTib_ref_local = Reperes.LTibia(1:3,1:3);
+Reperes.R_RFem_ref_local = Reperes.RFemur1(1:3,1:3);
+Reperes.R_RTib_ref_local = Reperes.RTibia(1:3,1:3);

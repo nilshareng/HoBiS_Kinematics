@@ -1,3 +1,35 @@
+function [Reperes, Angles, Param] = ReperesFromMarkers(markers)
+% From posture markers, computes the segment and segment CS, positions and orientations 
+% Also provides the corresponding joints angles for said posture
+% For Description - gives the "zero angles" and body parameters
+% For Reference - no need, just IK from description
+
+
+Reperes = struct;
+SPix = 10^-3;
+
+% Calcul de l'angle, méthode Olfa ou Matlab, Matlab ne marche que pour XYZ, ZYX et ZXZ
+Olfa = 1;
+
+% Définition des ordres de rotations des angles d'Euler pour les calculs
+% d'angles
+if Olfa
+    OrdrePelv = 'xyz';
+    OrdreLHip = 'zyx';
+    OrdreLKnee = 'zyx';
+    OrdreRHip = 'zyx';
+    OrdreRKnee = 'zyx';
+else
+    OrdrePelv = 'XYZ';
+    OrdreLHip = 'ZYX';
+    OrdreLKnee = 'ZYX';
+    OrdreRHip = 'ZYX';
+    OrdreRKnee = 'ZYX';
+end
+
+% printflag =1 pour activer les affichages de figures
+printflag = 0;
+
 % Deuxième phase de l'algo :
 % Créations des repères articulaires, Filtrage, Cinématique Inverse et
 % Approximation par Splines
@@ -27,6 +59,10 @@ Articular_Centre = struct;
 Cond = ones(N_frame,1) - ( (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0)  |   (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0) );
 A = find(Cond);
 
+if isempty(A)
+   error('No complete frames for the kinematic chain creation'); 
+end
+
 Y_monde_local=[0 0 1]; 
 Z_monde_local=[(markers.RFWT(A(1),1:2) - markers.LFWT(A(1),1:2)) 0];
 Z_monde_local=Z_monde_local/norm(Z_monde_local); 
@@ -34,13 +70,21 @@ X_monde_local=cross(Y_monde_local,Z_monde_local);
 X_monde_local=X_monde_local/norm(X_monde_local); 
 R_monde_local=[X_monde_local' Y_monde_local' Z_monde_local']; 
 
+Reperes.MondeLocal = eye(4);
+Reperes.MondeLocal(1:3,1:3) = R_monde_local;
+
 % repère du monde avec Z-up ; utile pour l'affichage des résultats
 Z_monde=[0 0 1];
 X_monde=X_monde_local; 
 Y_monde=cross(Z_monde,X_monde); 
 R_monde=[X_monde' Y_monde' Z_monde'];
 
-centre=(markers.LFWT + markers.RFWT)/2; % centre du repère
+Reperes.Monde = eye(4);
+Reperes.Monde(1:3,1:3) = R_monde;
+
+centre=(markers.LFWT + markers.RFWT)/2; % centre du repère pelvis - nouvelle origine monde 
+
+originalmarkers = markers;
 
 markers.LKNE=rotateAndCenter(markers.LKNE,centre,R_monde');
 markers.LKNI=rotateAndCenter(markers.LKNI,centre,R_monde');
@@ -54,6 +98,16 @@ markers.LFWT=rotateAndCenter(markers.LFWT,centre,R_monde');
 markers.RFWT=rotateAndCenter(markers.RFWT,centre,R_monde');
 markers.LBWT=rotateAndCenter(markers.LBWT,centre,R_monde');
 markers.RBWT=rotateAndCenter(markers.RBWT,centre,R_monde');
+markers.RFem9=rotateAndCenter(markers.RFem9,centre,R_monde');
+markers.LFem9=rotateAndCenter(markers.LFem9,centre,R_monde');
+markers.RFem6=rotateAndCenter(markers.RFem6,centre,R_monde');
+markers.LFem6=rotateAndCenter(markers.LFem6,centre,R_monde');
+markers.RTib6=rotateAndCenter(markers.RTib6,centre,R_monde');
+markers.LTib6=rotateAndCenter(markers.LTib6,centre,R_monde');
+markers.RTib1=rotateAndCenter(markers.RTib1,centre,R_monde');
+markers.LTib1=rotateAndCenter(markers.LTib1,centre,R_monde');
+markers.RTal1=rotateAndCenter(markers.RTal1,centre,R_monde');
+markers.LTal1=rotateAndCenter(markers.LTal1,centre,R_monde');
 
 
 %% Récupération Pos Centres Articulaires et Paramètre physiologiques
@@ -63,111 +117,51 @@ Articular_Centre.Pelvis =  (markers.LFWT + markers.RFWT)/2;
 
 % Genoux et Chevilles
 
-SPix = 10^-3;
-
-Articular_Centre.LKnee = (markers.LKNE + markers.LKNI)*0.5 - Articular_Centre.Pelvis;
-Articular_Centre.RKnee = (markers.RKNE + markers.RKNI)*0.5 - Articular_Centre.Pelvis;
-Articular_Centre.LAnkle = (markers.LANE + markers.LANI)*0.5 - Articular_Centre.Pelvis;
-Articular_Centre.RAnkle = (markers.RANE + markers.RANI)*0.5 - Articular_Centre.Pelvis;
-
-%maintenant que les marqueurs sont tous exprimés dans le repère monde avec
-%X devant et Z up, plus besoin de la distinction suivante
-% Selon le positionnement initial du sujet par rapport au monde
-% for i = 1:size(markers.RFWT,1)
-%     %if (mean(Articular_Centre.RKnee(1:10,1))<0)
-%     if (mean(Articular_Centre.RKnee(1:10,1))<0)
-%         Articular_Centre.RHip(i,:) = (markers.LFWT(i,:) + markers.RFWT(i,:))/2 + [ -0.38*norm(markers.RFWT(i,:) - markers.LFWT(i,:)) , -0.31*norm((markers.LFWT(i,:)+markers.RFWT(i,:))*0.5-(markers.LBWT(i,:)+markers.RBWT(i,:))*0.5) , -0.096*(norm(markers.RANI(i,:)-markers.RKNE(i,:))+norm(markers.RKNE(i,:)-markers.RFWT(i,:))) ] - Articular_Centre.Pelvis(i,:);
-%         Articular_Centre.LHip(i,:) = (markers.LFWT(i,:) + markers.RFWT(i,:))/2 + [  0.38*norm(markers.RFWT(i,:) - markers.LFWT(i,:)) , -0.31*norm((markers.LFWT(i,:)+markers.RFWT(i,:))*0.5-(markers.LBWT(i,:)+markers.RBWT(i,:))*0.5) , -0.096*(norm(markers.LANI(i,:)-markers.LKNE(i,:))+norm(markers.LKNE(i,:)-markers.LFWT(i,:))) ] - Articular_Centre.Pelvis(i,:);
-%     else
-%         Articular_Centre.RHip(i,:) = (markers.LFWT(i,:) + markers.RFWT(i,:))/2 + [  0.38*norm(markers.RFWT(i,:) - markers.LFWT(i,:)) , -0.31*norm((markers.LFWT(i,:)+markers.RFWT(i,:))*0.5-(markers.LBWT(i,:)+markers.RBWT(i,:))*0.5) , -0.096*(norm(markers.RANI(i,:)-markers.RKNE(i,:))+norm(markers.RKNE(i,:)-markers.RFWT(i,:))) ] - Articular_Centre.Pelvis(i,:);
-%         Articular_Centre.LHip(i,:) = (markers.LFWT(i,:) + markers.RFWT(i,:))/2 + [ -0.38*norm(markers.RFWT(i,:) - markers.LFWT(i,:)) , -0.31*norm((markers.LFWT(i,:)+markers.RFWT(i,:))*0.5-(markers.LBWT(i,:)+markers.RBWT(i,:))*0.5) , -0.096*(norm(markers.LANI(i,:)-markers.LKNE(i,:))+norm(markers.LKNE(i,:)-markers.LFWT(i,:))) ] - Articular_Centre.Pelvis(i,:);
-%  
-%     end
-% end
-
-for i = 1:size(markers.RFWT,1)
-    Articular_Centre.RHip(i,:) = (markers.LFWT(i,:) + markers.RFWT(i,:))/2; 
-    Articular_Centre.LHip(i,:) = (markers.LFWT(i,:) + markers.RFWT(i,:))/2; 
-    %par rapport à Leardini, Z est le même, Y chez Leardini est X chez nous
-    % et X chez Leardini est -Y chez nous
-    Articular_Centre.RHip(i,3) =  Articular_Centre.RHip(i,3) -0.096*(norm(markers.RANI(i,:)-markers.RKNE(i,:))+norm(markers.RKNE(i,:)-markers.RFWT(i,:)));
-    Articular_Centre.RHip(i,1) =  Articular_Centre.RHip(i,1) -0.31*norm((markers.LFWT(i,:)+markers.RFWT(i,:))*0.5-(markers.LBWT(i,:)+markers.RBWT(i,:))*0.5) ;
-    Articular_Centre.RHip(i,2) =  Articular_Centre.RHip(i,2) -0.38*norm(markers.RFWT(i,:) - markers.LFWT(i,:));
- 
-    Articular_Centre.LHip(i,3) =  Articular_Centre.LHip(i,3) -0.096*(norm(markers.RANI(i,:)-markers.RKNE(i,:))+norm(markers.RKNE(i,:)-markers.RFWT(i,:)));
-    Articular_Centre.LHip(i,1) =  Articular_Centre.LHip(i,1) -0.31*norm((markers.LFWT(i,:)+markers.RFWT(i,:))*0.5-(markers.LBWT(i,:)+markers.RBWT(i,:))*0.5) ;
-    Articular_Centre.LHip(i,2) =  Articular_Centre.LHip(i,2) +0.38*norm(markers.RFWT(i,:) - markers.LFWT(i,:));
-end
-% Hip according to Leardini 1999 où Z est le même que nous, X est égal à -Y
-% pour nous, et Y est égal à X pour nous
-% rightHipX = ((LFWTx + RFWTx) x 0,5  ) + 0,38 x norm(RFWT - LFWT)  
-% rightHipY = ((LFWTy + RFWTy) x 0,5) - 0,31 x norm[((LFWT + RFWT) x 0,5) - ((LBWT + RBWT) x 0,5)] 
-% rightHipZ = ((LFWTz + RFWTz) x 0,5  ) - 0,096 x [norm(RANI - RKNE) + norm(RKNE - RFWT)] 
-% leftHipX = ((LFWTx + RFWTx) x 0,5  ) - 0,38 x norm(RFWT - LFWT)  
-% leftHipY = ((LFWTy + RFWTy) x 0,5) - 0,31 x norm[((LFWT + RFWT) x 0,5) - ((LBWT + RBWT) x 0,5)] 
-% leftHipZ = ((LFWTz + RFWTz) x 0,5  ) - 0,096 x [norm(LANI - LKNE) + norm(LKNE - LFWT) 
-% 
+Articular_Centre.LKnee = (markers.LKNE + markers.LFem9)*0.5 + (markers.LKNI + markers.LTib6)*0.5 ;
+Articular_Centre.RKnee = (markers.RKNE + markers.RFem9)*0.5 + (markers.RKNI + markers.RTib6)*0.5 ;
+Articular_Centre.LAnkle = markers.LTal1 ;
+Articular_Centre.RAnkle = markers.RTal1 ;
+Articular_Centre.RHip = markers.RHRC ;
+Articular_Centre.LHip = markers.LHRC ;
 
 % Posture de description
 
 % Points to consider per joint
 % Les 'Cond' font le tri dans les positions de marqueurs pour éliminer
 % les occultations
-if ~flag.txt
-    Cond = ones(N_frame,1) - ( (markers.LANI(:,1)==0)&(markers.LANI(:,2)==0)&(markers.LANI(:,3)==0)  |   (markers.LKNE(:,1)==0)&(markers.LKNE(:,2)==0)&(markers.LKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
-    Fem1g = mean(Articular_Centre.LHip(find(Cond),:))*SPix;
-    
-    Cond = ones(N_frame,1) - ( (markers.LKNI(:,1)==0)&(markers.LKNI(:,2)==0)&(markers.LKNI(:,3)==0)  |   (markers.LKNE(:,1)==0)&(markers.LKNE(:,2)==0)&(markers.LKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
-    Fem6g = [Fem1g(1) Fem1g(2) (mean((markers.LKNE(find(Cond),3)) + markers.LKNI(find(Cond),3))*0.5 - mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
-    
-    Cond = ones(N_frame,1) - ( (markers.RANE(:,1)==0)&(markers.RANE(:,2)==0)&(markers.RANE(:,3)==0)  |   (markers.LANI(:,1)==0)&(markers.LANI(:,2)==0)&(markers.LANI(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
-    Tal1g = [Fem1g(1) Fem1g(2) (mean((markers.LANE(find(Cond),3)) + markers.LANI(find(Cond),3))*0.5 -  mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
-    
-    Cond = ones(N_frame,1) - ( (markers.RANI(:,1)==0)&(markers.RANI(:,2)==0)&(markers.RANI(:,3)==0)  |   (markers.RKNE(:,1)==0)&(markers.RKNE(:,2)==0)&(markers.RKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
-    Fem1d = mean(Articular_Centre.RHip(find(Cond),:))*SPix;
-    
-    Cond = ones(N_frame,1) - ( (markers.RKNI(:,1)==0)&(markers.RKNI(:,2)==0)&(markers.RKNI(:,3)==0)  |   (markers.RKNE(:,1)==0)&(markers.RKNE(:,2)==0)&(markers.RKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
-    Fem6d = [Fem1d(1) Fem1d(2) (mean((markers.RKNE(find(Cond),3)) + markers.RKNI(find(Cond),3))*0.5 -  mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
-    
-    Cond = ones(N_frame,1) - ( (markers.RANE(:,1)==0)&(markers.RANE(:,2)==0)&(markers.RANE(:,3)==0)  |   (markers.RANI(:,1)==0)&(markers.RANI(:,2)==0)&(markers.RANI(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
-    Tal1d = [Fem1d(1) Fem1d(2) (mean((markers.RANE(find(Cond),3)) + markers.RANI(find(Cond),3))*0.5 -  mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
-    
-    %Franck : symétrisation du squelette; inverser la composante latérale; dans
-    %le repère monde, ça correspond à Y, comme Z est vers le haut et X vers
-    %l'avant
-    Fem1d=Fem1g; Fem1d(2)=-Fem1d(2);
-    Fem6d=Fem6g; Fem6d(2)=-Fem6d(2);
-    Tal1d=Tal1g; Tal1d(2)=-Tal1d(2);
+% Cond = ones(N_frame,1) - ( (markers.LANI(:,1)==0)&(markers.LANI(:,2)==0)&(markers.LANI(:,3)==0)  |   (markers.LKNE(:,1)==0)&(markers.LKNE(:,2)==0)&(markers.LKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
+Fem1g = markers.LHRC * SPix; %mean(Articular_Centre.LHip(find(Cond),:))*SPix;
 
-end
-%% Création des différents repères articulaires et calcul des angles
+% Cond = ones(N_frame,1) - ( (markers.RANI(:,1)==0)&(markers.RANI(:,2)==0)&(markers.RANI(:,3)==0)  |   (markers.RKNE(:,1)==0)&(markers.RKNE(:,2)==0)&(markers.RKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
+Fem1d = markers.RHRC * SPix;
+
+% Cond = ones(N_frame,1) - ( (markers.LKNI(:,1)==0)&(markers.LKNI(:,2)==0)&(markers.LKNI(:,3)==0)  |   (markers.LKNE(:,1)==0)&(markers.LKNE(:,2)==0)&(markers.LKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
+Fem6g = markers.LFem6 * SPix;%[Fem1g(1) Fem1g(2) (mean((markers.LKNE(find(Cond),3)) + markers.LKNI(find(Cond),3))*0.5 - mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
+
+% Cond = ones(N_frame,1) - ( (markers.RKNI(:,1)==0)&(markers.RKNI(:,2)==0)&(markers.RKNI(:,3)==0)  |   (markers.RKNE(:,1)==0)&(markers.RKNE(:,2)==0)&(markers.RKNE(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
+Fem6d = markers.RFem6 * SPix;%[Fem1d(1) Fem1d(2) (mean((markers.RKNE(find(Cond),3)) + markers.RKNI(find(Cond),3))*0.5 -  mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
+
+% Cond = ones(N_frame,1) - ( (markers.RANE(:,1)==0)&(markers.RANE(:,2)==0)&(markers.RANE(:,3)==0)  |   (markers.LANI(:,1)==0)&(markers.LANI(:,2)==0)&(markers.LANI(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
+Tal1g = markers.LTal1 * SPix;%[Fem1g(1) Fem1g(2) (mean((markers.LANE(find(Cond),3)) + markers.LANI(find(Cond),3))*0.5 -  mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
+
+% Cond = ones(N_frame,1) - ( (markers.RANE(:,1)==0)&(markers.RANE(:,2)==0)&(markers.RANE(:,3)==0)  |   (markers.RANI(:,1)==0)&(markers.RANI(:,2)==0)&(markers.RANI(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
+Tal1d = markers.RTal1 * SPix;%[Fem1d(1) Fem1d(2) (mean((markers.RANE(find(Cond),3)) + markers.RANI(find(Cond),3))*0.5 -  mean(Articular_Centre.Pelvis(find(Cond),3)))*SPix];
+
+%Franck : symétrisation du squelette; inverser la composante latérale; dans
+%le repère monde, ça correspond à Y, comme Z est vers le haut et X vers
+%l'avant
+Fem1d=Fem1g; Fem1d(2)=-Fem1d(2);
+Fem6d=Fem6g; Fem6d(2)=-Fem6d(2);
+Tal1d=Tal1g; Tal1d(2)=-Tal1d(2);
 
 
 
-% Calcul de l'angle, méthode Olfa ou Matlab, Matlab ne marche que pour XYZ, ZYX et ZXZ
-Olfa = 1;
-
-% Définition des ordres de rotations des angles d'Euler pour les calculs
-% d'angles
-if Olfa
-    OrdrePelv = 'xyz';
-    OrdreLHip = 'zyx';
-    OrdreLKnee = 'zyx';
-    OrdreRHip = 'zyx';
-    OrdreRKnee = 'zyx';
-else
-    OrdrePelv = 'XYZ';
-    OrdreLHip = 'ZYX';
-    OrdreLKnee = 'ZYX';
-    OrdreRHip = 'ZYX';
-    OrdreRKnee = 'ZYX';
-end
-
-% printflag =1 pour activer les affichages de figures
-printflag = 0;
 
 
-%% Bassin Référence / Description
+
+
+
+%% Bassin Description
 % Selon l'ISB pour le repère HJC solidaire du bassin
 
 % Z latéral vers la droite du sujet
@@ -176,20 +170,6 @@ printflag = 0;
 % X pdt vectoriel YZ
 % On ne voudrait pas définir les axes sur une frame avec occultation,
 % donc vérification, puis sélection de la première frame
-Cond = ones(N_frame,1) - ( (markers.LBWT(:,1)==0)&(markers.LBWT(:,2)==0)&(markers.LBWT(:,3)==0)  |   (markers.RBWT(:,1)==0)&(markers.RBWT(:,2)==0)&(markers.RBWT(:,3)==0) |  (markers.RFWT(:,1)==0)&(markers.RFWT(:,2)==0)&(markers.RFWT(:,3)==0) | (markers.LFWT(:,1)==0)&(markers.LFWT(:,2)==0)&(markers.LFWT(:,3)==0)   );
-A = find(Cond);
-
-%construction du repère du monde ramené au bassin : Y parfaitement
-%verical, et X et Z parfaitement horizontaux
-% remarque : Fem1g, Fem6g... sont exprimés dans ce repère parfaitement
-% vertical
-
-Y_monde_local=[0 0 1];
-Z_monde_local=[(markers.RFWT(A(1),1:2) - markers.LFWT(A(1),1:2)) 0];
-Z_monde_local=Z_monde_local/norm(Z_monde_local);
-X_monde_local=cross(Y_monde_local,Z_monde_local);
-X_monde_local=X_monde_local/norm(X_monde_local);
-R_monde_local=[X_monde_local' Y_monde_local' Z_monde_local'];
 
 % repère du monde avec Z-up ; utile pour l'affichage des résultats
 %Z_monde=[0 0 1];
@@ -197,7 +177,7 @@ R_monde_local=[X_monde_local' Y_monde_local' Z_monde_local'];
 %Y_monde=cross(Z_monde,X_monde);
 %R_monde=[X_monde' Y_monde' Z_monde'];
 
-% repère du bassin en position naturelle
+% repère du bassin en posture donnée
 Z_ref = markers.RFWT(A(1),:) - markers.LFWT(A(1),:);
 u = (markers.LFWT(A(1),:) + markers.RFWT(A(1),:))/2 - (markers.LBWT(A(1),:) + markers.RBWT(A(1),:))/2;
 Y_ref = cross(Z_ref,u);
@@ -210,17 +190,22 @@ Z_ref = Z_ref ./ norm(Z_ref);
 % Matrice de passage Pelvis naturel vers monde d'origine
 R_Pelvis_ref = [X_ref' Y_ref' Z_ref'];
 
+Reperes.Pelvis = eye(4);
+Reperes.Pelvis(1:3,1:3) = R_Pelvis_ref;
+
 % rotation naturelle du bassin par rapport au repère du monde
 %repère du monde virtuel construit à partir de Xref et Zref (sans les
 % composantes verticales) et on force le Y vers le haut 0;0;1
 
 R_Pelvis_monde_local=R_monde_local'*R_Pelvis_ref;
 
-
+Reperes.PelvisLocal = eye(4);
+Reperes.PelvisLocal(1:3,1:3) = R_Pelvis_monde_local;
 
 %% Bassin Mouvement : Référence = Description
 
 % Bassin référence
+
 
 for i =1:size(markers.RFWT, 1)
     Z_Pel(i,:) = markers.RFWT(i,:)-markers.LFWT(i,:);
@@ -309,8 +294,6 @@ else
     R_LFem_ref_monde = [X_ref' Y_ref' Z_ref'];
     R_LFem_ref_local = R_Pelvis_ref' *  R_LFem_ref_monde;
 end
-
-
 %% Création repère Fémur Gauche Mvt
 
 % Matrice de passage pour le calcul d'angle
@@ -405,8 +388,6 @@ else
     R_LTib_ref_local = R_LFem_ref_monde' *  R_LTib_ref_monde;
     
 end
-
-
 %% Création repère Tibia Gauche Mvt
 
 for i = 1 : size(markers.RFWT,1)
@@ -626,7 +607,6 @@ for i = 1 : size(markers.RFWT,1)
     
 end
 Angle.Angle_RKnee=Angle_RKnee;
-
 %% Contrôle -> Affichage des Angles et des Repères au cours du temps pour Vérification
 if printflag
     
@@ -791,3 +771,6 @@ if printflag
     title('Genou Gauche')
     legend('X - Sens de la marche', 'Y - Ankle/Knee' ,'Z - Lateral -> KNE/I');
 end
+
+end
+
