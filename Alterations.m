@@ -262,7 +262,7 @@ for i = 1:11
 end
 
 NewPoulF = NewPoulF(size(NewPoul,1)+1:2*size(NewPoul,1),:);
-DisplayGait(GaitMarkers,6);
+DisplayGait(GaitMarkers);
 
 NewAnglesF = NewAnglesF(S+1:2*S,:);
 

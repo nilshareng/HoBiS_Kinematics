@@ -26,9 +26,12 @@ prompt = ...
     'Model Mass:', ...
     'Model Articular Range of Motion Min Boundaries in degrees (Pelv*3, LHip*3, LKnee*1, RHip*3, RKnee*1):',...
     'Model Articular Range of Motion Max Boundaries in degrees (Pelv*3, LHip*3, LKnee*1, RHip*3, RKnee*1):',...
-    'Footprints (target) footstrike (gait% X Y Z):',...
-    'Footprints (target) toe off (gait% X Y Z):',...
-    'Footprints (target) min Z (gait% X Y Z):'...
+    'Footprints (target) left footstrike (gait% X Y Z):',...
+    'Footprints (target) left toe off (gait% X Y Z):',...
+    'Footprints (target) left min Z (gait% X Y Z):'...
+    'Footprints (target) right footstrike (gait% X Y Z):',...
+    'Footprints (target) right toe off (gait% X Y Z):',...
+    'Footprints (target) right min Z (gait% X Y Z):'...
     'Enter Save folder Path:'};
 dlgtitle = 'Inputs';
 dims = [1 110];
@@ -43,6 +46,9 @@ definput = {'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\',...
     '[0.2000    0.0650   -0.0188   -0.7755]',...
     '[0.7333    0.1135    0.0585   -0.6367]',...
     '[0.2833    0.0656    0.0595   -0.7840]'...
+    '[0.7333   -0.0483   -0.0049   -0.7827]',...
+    '[0.2667   -0.0990    0.0351   -0.6603]',...
+    '[0.8167   -0.0545    0.0777   -0.7835]'...
     'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Txt'};
 answer = inputdlg(prompt,dlgtitle,dims,definput);
 
@@ -71,11 +77,11 @@ M = str2double(answer{6});
 model.jointRangesMin = str2num(answer{7});
 model.jointRangesMax = str2num(answer{8});
 
-X = [str2num(answer{9}) ; str2num(answer{10}) ; str2num(answer{11})];
-X = [[2;2;3] , X];
+X = [str2num(answer{9}) ; str2num(answer{10}) ; str2num(answer{11}); str2num(answer{12}) ; str2num(answer{13}) ; str2num(answer{14})];
+X = [[2;2;3;5;5;6] , X];
 flag.steps = 1;
 flag.txt = 1;
-SavePath = answer{12};
+SavePath = answer{15};
 Names = {DataDes(1:end-4)};
 
 
@@ -273,7 +279,7 @@ for ii=1:length(Names)%1%:11:length(Names)
 %         [Dmarkers, DParam ]= HobisDataParser(DataDes);
         [Rmarkers, RParam ] = HobisDataParser(DataRef);
 %         [DReperes DSeq NDmarkers NDParam] = ReperesFromMarkers(Dmarkers);
-        [RReperes RSeq NRmarkers NRParam] = ReperesFromMarkersCorrected(Rmarkers);
+        [RReperes, RSeq, NRmarkers, NRParam] = ReperesFromMarkersCorrected(Rmarkers);
         A = zeros(1,11);
 %         [tmp, tmpS, tmpmarkers] = fcineshort(A,NDParam, DReperes, Dmarkers);
 %         [tmp, tmpS, tmpmarkers] = fcineshort(A,NDParam, DReperes, NDmarkers);
@@ -326,8 +332,8 @@ for ii=1:length(Names)%1%:11:length(Names)
         % TODO - Boucler sur Alterations, matcher la pos ini chev à partir
         % de poulaine chargée et Posture Ref - ne partir sur pos descr que si bexoin compa
         % extra espece
-        Alterations;
-        close all;
+%         Alterations;
+%         close all;
 %         PreLoop;
 %         Loop_Batch_Txt;
 %         close all;
@@ -369,10 +375,12 @@ for ii=1:length(Names)%1%:11:length(Names)
                 else
                     if flag.txt
                         Alterations;
-                        
+                        PreLoop;
+                        Loop_Batch_Txt;
+                        close all;
                     end
-                    PreLoop;
-                    Loop_Batch;
+%                     PreLoop;
+%                     Loop_Batch;
                     close all; % Just in case
                     
                     save(strcat(dirname,'\',Names{jj},'P','.mat'),'Param','Saved','SNPCA','GT','Conv','PFin','TAFin','X','mem','Iflag','Storing')
