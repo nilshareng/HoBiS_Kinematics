@@ -1,0 +1,19 @@
+function [res] = CEShort(Poulaine,TA,M,Markers,Reperes)
+%UNTITLED2 Summary of this function goes here
+%   Detailed explanation goes here
+Fem1g = Markers. /1000 ; 
+Fem1d = Markers. /1000;
+Fem6g = Markers. /1000;
+Fem6d = Markers. /1000;
+Tal1g = Markers. /1000;
+Tal1d = Markers. /1000;
+R_monde_local = Reperes.MondeLocal ;
+R_Pelvis_monde_local = Reperes.PelvisLocal ;
+R_LFem_ref_local = Reperes.LFemur1Local ;
+R_LTib_ref_local = Reperes.LTibiaLocal ;
+R_RFem_ref_local = Reperes.RFemur1Local ;
+R_RTib_ref_local = Reperes.RTibiaLocal ;
+
+res = CE(Poulaine,TA,M,Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
+end
+

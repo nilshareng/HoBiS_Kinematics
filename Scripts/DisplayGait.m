@@ -4,6 +4,7 @@ function [] = DisplayGait(GaitMarkers,N)
 
 if nargin == 1
     f=figure(1);
+    N = 1;
 elseif nargin == 2
     f=figure(N);
 end

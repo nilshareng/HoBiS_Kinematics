@@ -153,10 +153,11 @@ else
     % Création du vecteur des points cibles - X
     % La première colonne repère la courbe dont est issu le point originalement.
     % C'était pour le calcul des tangentes, mais c'est pas utile actuellement.
-    X = [2;2;3;5;5;6];
-    X = [X , (A-1)/Period];
-    X = [X , [GT(A(1:3),1:3) ; GT(A(4:6),4:6)]];
-    
+    if all(X(:,2:end)==zeros(size(X(:,2:end))))
+        X = [2;2;3;5;5;6];
+        X = [X , (A-1)/Period];
+        X = [X , [GT(A(1:3),1:3) ; GT(A(4:6),4:6)]];
+    end
     
     % Introduction d'un delta -> tests
     % X(1,3) = X(1,3) + 0.1;

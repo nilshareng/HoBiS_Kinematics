@@ -14,6 +14,8 @@ else
     Int = 60;
 end
 
+dp = [0.001, 0.001];
+
 % Au cas où il manque une partie des NPCA (les DDLs).. Je sais pas d'où ça vient...
 if size(NPCA,2)~= 3
     NPCA = [NPCA(1:size(NPCA,1)/2), NPCA(size(NPCA,1)/2+1:end)];
@@ -37,10 +39,10 @@ J=zeros(3*npcp,2*npca);
 % Coût précision de référence
 Ref = ErrorFun3(NPolA,X,Sequence,Markers,Reperes);
 a = Ref;
-% Ref=[];
-% for i =1:size(X,1)
-%     Ref = [Ref; X(i,3:end)-a(i,:)];
-% end
+Ref=[];
+for i =1:size(X,1)
+    Ref = [Ref; X(i,3:end)-a(i,:)];
+end
 
 for j=1:11  % Pour chaque angle
     

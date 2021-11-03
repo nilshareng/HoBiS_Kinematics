@@ -62,7 +62,8 @@ SP = SequentialRotation(Angles.Pelvis, Sequence.Pelvis);
 Mpass = Mpass * SP(1:3,1:3);
 
 % Reperes Pour affichage
-NewReperes.Pelvis = Mpass;
+NewReperes.Pelvis = eye(4);
+NewReperes.Pelvis(1:3,1:3) = Mpass;
 NewReperes.Pelvis(1:3,4) = Mpass * Transla;
 
 
@@ -100,7 +101,8 @@ Mpass = Mpass * (Reperes.Pelvis(1:3,1:3)^-1 * Reperes.LFemur1(1:3,1:3)); % Passa
 SLH = SequentialRotation(Angles.LHip, Sequence.LHip);
 Mpass = Mpass * SLH(1:3,1:3);
 
-NewReperes.LFemur1 = Mpass;
+NewReperes.LFemur1 = eye(4);
+NewReperes.LFemur1(1:3,1:3) = Mpass;
 NewReperes.LFemur1(1:3,4) = Transla;
 
 % Recalcul position markers segment Femur G
@@ -124,7 +126,8 @@ NewMarkers.LFem6 = NewMarkers.LHRC + NewMarkers.LFem6(1:3)';
 Transla = NewMarkers.LFem6';
 Mpass = Mpass * (Reperes.LFemur1(1:3,1:3)^-1 * Reperes.LFemur2(1:3,1:3));
 
-NewReperes.LFemur2 = Mpass;
+NewReperes.LFemur2 = eye(4);
+NewReperes.LFemur2(1:3,1:3) = Mpass;
 NewReperes.LFemur2(1:3,4) = NewMarkers.LFem6';
 
 % Rotation Angles Genou G 
@@ -139,7 +142,8 @@ NewMarkers.LTib1 = NewMarkers.LTib1';
 Transla = NewMarkers.LTib1;
 Mpass = Mpass * (Reperes.LFemur2(1:3,1:3)^-1 * Reperes.LTibia(1:3,1:3));
 
-NewReperes.LTibia = Mpass;
+NewReperes.LTibia = eye(4);
+NewReperes.LTibia(1:3,1:3) = Mpass;
 NewReperes.LTibia(1:3,4) = NewMarkers.LTib1';
 
 % Recalcul position markers segment Tibia G
@@ -175,7 +179,9 @@ Mpass = Mpass * (Reperes.Pelvis(1:3,1:3)^-1 * Reperes.RFemur1(1:3,1:3)); % Passa
 SRH = SequentialRotation(Angles.RHip, Sequence.RHip);
 Mpass = Mpass * SRH(1:3,1:3);
 
-NewReperes.RFemur1 = Mpass;
+
+NewReperes.RFemur1 = eye(4);
+NewReperes.RFemur1(1:3,1:3) = Mpass;
 NewReperes.RFemur1(1:3,4) = Transla;
 
 % Recalcul position markers segment Femur G
@@ -199,7 +205,8 @@ NewMarkers.RFem6 = NewMarkers.RHRC + NewMarkers.RFem6(1:3)';
 Transla = NewMarkers.RFem6';
 Mpass = Mpass * (Reperes.RFemur1(1:3,1:3)^-1 * Reperes.RFemur2(1:3,1:3));
 
-NewReperes.RFemur2 = Mpass;
+NewReperes.RFemur2 = eye(4);
+NewReperes.RFemur2(1:3,1:3) = Mpass;
 NewReperes.RFemur2(1:3,4) = NewMarkers.RFem6';
 
 % Rotation Angles Genou G 
@@ -214,7 +221,8 @@ NewMarkers.RTib1 = NewMarkers.RTib1';
 Transla = NewMarkers.RTib1;
 Mpass = Mpass * (Reperes.RFemur2(1:3,1:3)^-1 * Reperes.RTibia(1:3,1:3));
 
-NewReperes.RTibia = Mpass;
+NewReperes.RTibia = eye(4);
+NewReperes.RTibia(1:3,1:3) = Mpass;
 NewReperes.RTibia(1:3,4) = NewMarkers.RTib1';
 
 % Recalcul position markers segment Tibia G
