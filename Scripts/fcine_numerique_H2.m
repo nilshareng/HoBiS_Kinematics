@@ -1,6 +1,7 @@
 function [res,Save]=fcine_numerique_H2(P,Fem1g,Fem6g,Tal1g,Fem1d,Fem6d,Tal1d, R_monde_local, R_Pelvis_monde, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local)
 % Fonction cinématique du modèle
 % Entrée : Angles P et paramètres physiologiques Fem...
+% Param en ligne
 % Sortie : Les positions des chevilles simulées
 % Franck : intégration des rotations anatomiques initiales
 

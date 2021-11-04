@@ -263,43 +263,50 @@ end
 % Restriction de la poulaine à l'intervalle d'intérêt
 Period1= Period-23;
 % GT = GT(Bornes(1):(Bornes(1)+Period1-1),:);
-GT = GT(1:(Period+1),:);
-% GT = GT(Bornes(1):Bornes(2),:);
+if flag.txt
+    GT = PN;
+    NewPoul = GT;
+else
+    GT = GT(1:(Period+1),:);
+    % GT = GT(Bornes(1):Bornes(2),:);
+    
+    % % Symétrisation de la poulaine ciblée
+    % GT = GT(Bornes(1):(Bornes(1)+Period1-1),:);
+    % GT = GT(Bornes(1):(Bornes(1)+Period1-1),:);
+    %
+    %
+    mid = fix((Period)/2);
+    
+    GT(:,4:6) = [GT(mid:end,1) , -GT(mid:end,2) , GT(mid:end,3) ; GT(1:mid-1,1) , -GT(1:mid-1,2) ,GT(1:mid-1,3) ];
+    %
+    
+    % % Symétrisation Poulaine Cible
+    
+    % GT(:,6) = [-GT(mid:end-1,3);-GT(1:mid,3)];
+    % GT(:,4:5) = [GT(mid:end-1,2:3);GT(1:mid,2:3)];
+    %
+    % P(:,6) = [-P(mid:end-1,1);-P(1:mid,1)];
+    % P(:,4:5) = [P(mid:end-1,2:3);P(1:mid,2:3)];
+    
+    % GT into spline
+    % Filtrage
+    freq=5;
+    [b,a] = butter(2 , freq/(0.5*rate) , 'low');
+    NewPoul=filtfilt(b,a,GT);
+    PolP=[];
+    NewP=[];
+    
+    for i = 1:6
+        [temp, tempol] = Curve2Spline(NewPoul(:,i));
+        PolP = [PolP ;  i*ones(size(tempol,1),1),tempol];
+        NewP=[NewP, temp'];
+    end
+    
+    NewP(:,4:6) = [NewP(mid:end,1) , -NewP(mid:end,2) , NewP(mid:end,3) ; NewP(1:mid-1,1) , -NewP(1:mid-1,2) , NewP(1:mid-1,3)];
+    
+    GT = NewP;
 
-% mid = fix(Period1/2);
-
-% % Symétrisation de la poulaine ciblée
-% GT = GT(Bornes(1):(Bornes(1)+Period1-1),:);
-% GT = GT(Bornes(1):(Bornes(1)+Period1-1),:);
-% 
-% 
-GT(:,4:6) = [GT(mid:end,1) , -GT(mid:end,2) , GT(mid:end,3) ; GT(1:mid-1,1) , -GT(1:mid-1,2) ,GT(1:mid-1,3) ];
-% 
-
-% % Symétrisation Poulaine Cible 
-mid = fix((Period)/2);
-
-% GT(:,6) = [-GT(mid:end-1,3);-GT(1:mid,3)];
-% GT(:,4:5) = [GT(mid:end-1,2:3);GT(1:mid,2:3)];
-% 
-% P(:,6) = [-P(mid:end-1,1);-P(1:mid,1)];
-% P(:,4:5) = [P(mid:end-1,2:3);P(1:mid,2:3)];
-
-% GT into spline 
-% Filtrage
-freq=5;
-[b,a] = butter(2 , freq/(0.5*rate) , 'low');
-NewPoul=filtfilt(b,a,GT);
-PolP=[];
-NewP=[];
-for i = 1:6
-    [temp, tempol] = Curve2Spline(NewPoul(:,i));
-    PolP = [PolP ;  i*ones(size(tempol,1),1),tempol];
-    NewP=[NewP, temp'];
 end
-
-NewP(:,4:6) = [NewP(mid:end,1) , -NewP(mid:end,2) , NewP(mid:end,3) ; NewP(1:mid-1,1) , -NewP(1:mid-1,2) , NewP(1:mid-1,3)];
-
 
 if printflag
 figure;
@@ -315,7 +322,6 @@ end
 end
 
 
-GT = NewP;
 
 
 

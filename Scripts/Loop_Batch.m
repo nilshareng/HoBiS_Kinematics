@@ -12,7 +12,7 @@ printflag=0;
 
 % Ajout de l'option gradient 0, non updaté pour les c3d actuels car pas de convergence de base.
 derflag = 0;
-MaxLoop = 50;
+MaxLoop = 100;
 
 close all;
 while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les convergences sans crash
@@ -105,7 +105,7 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     Storing = [Storing ; c*ones(size(NPCA,1),1) , NPCA];
     
     
-% %  Gestion des détails   
+% %  Gestion des détails - Deprecated  
 %     if c>=0
 %         tem = Details2(TempPCA, NPCA, E);
 %         if isempty(tem) && ~isempty(Emem)
