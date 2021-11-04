@@ -337,11 +337,28 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
 end
 % pause;
 %%% Affichages end loop
-c
-Conv
-norm(NRef)
-Cost
-JerkRef
+% c
+% Conv
+% norm(NRef)
+% Cost
+% JerkRef
+
+[Gait, GaitMarkers, GaitReperes] = Angles2Gait(TA,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
+DisplayGait(GaitMarkers);
+
+Results = struct;
+Results.Inputs = answer;
+Results.InitialPoulaine = model.gait;
+Results.InitialReference = model.reference;
+Results.InitialDescription = model.description;
+Results.InitialSplinedPoulaine = SplinedComputedPoulaine;
+Results.InitialSplinedAngles = SplinedAngles;
+Results.X = X;
+Results.InitialPolynom = PolA;
+Results.FinalPolynom = NPolA;
+Results.IncrementalPCModification = pModifs;
+Results.Convergence = Conv;
+Results.NCycles = c;
 
 %%
 %%% Selecting, Culling, Saving, ...
