@@ -383,7 +383,7 @@ for ii=1:length(Names)%1%:11:length(Names)
 %                     Loop_Batch;
                     close all; % Just in case
                     
-                    save(strcat(dirname,'\',Names{jj},'P','.mat'),'Param','Saved','SNPCA','GT','Conv','PFin','TAFin','X','mem','Iflag','Storing')
+                    save(strcat(SavePath,'\',num2str(fix(clock)),'.mat'),'Results');
                 end
             end
         end
