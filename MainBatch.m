@@ -6,6 +6,8 @@ clear all;
 close all;
 clc;
 
+p = genpath('.');
+addpath(p);
 %addpath("C:\Users\nhareng\Desktop\CodeCommente\hobis");
 
 flag = struct;
