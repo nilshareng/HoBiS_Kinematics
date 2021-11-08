@@ -87,73 +87,6 @@ SavePath = answer{15};
 Names = {DataDes(1:end-4)};
 
 
-%%% Variables to set : p , PathPreSet, Desc
-
-
-%%
-% 
-% 
-% I = input("Prompt path to data directory and press Enter, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\ \n", 's');
-% 
-% if isempty(I) %|| 1
-%     % Chemin d'accès par défaut : .c3d et à l'excel compilant les données de marche :
-%     p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
-%     
-%     % Récupération des données de l'excel:
-%     % Format : Nom fichier / Frame début et fin cycle de marche / Frame initiale
-%     % BornesMarches = Chiffres (BorneSup,BorneInf,FrameIni) ; Names = Noms
-%     [BornesMarche, Names] = xlsread(strcat(p,'Classement_Pas.xlsx'),'A2:D79');
-%     flag.c3d = 1;
-% else
-%     % Chemin d'accès spécifié par l'utilisateur
-%     p = I;
-%     p='C:\Users\nhareng\Documents\Prog\Matlab\Test\warping 2006\';
-%     p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\';
-%     a = input('Prompt Des file aggregator Name (.xlsx) - or simply single file name des (.txt)\n','s');
-%     b = input('Prompt Ref file aggregator Name (.xlsx) - or simply single file name ref (.txt)\n','s');
-%     switch a(end-2:end)
-%         case 'lsx'
-%             [Names, Footprints]= xlsread(strcat(p,a),'A2:B79');
-%             flag.c3d = 1;
-%         case 'txt'
-%             DataDes = load(strcat(p,a));
-%             DataRef = load(strcat(p,b));
-%             Names ={a(1:end-4)};
-%             flag.txt = 1;
-%     end
-% end
-% %  p = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\BDD\';
-% 
-% % Déf du dossier de récéption des données calculées pour ce batch
-% I = input("Prompt path to save directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\ \n", 's');
-% 
-% if isempty(I)
-%     SavePath = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\1\';
-% else
-%     SavePath = I;
-% end
-% 
-% %%% Need to setup 'p' 'SavePath' 'flag.txt' 'PathPreSet' 'flag.presets'
-% 
-% 
-% I = input("Prompt path to presets directory, default (press Enter) is C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Batch\NewPresets\ \n", 's');
-% 
-% if isempty(I)
-%     % Déf du dossier contenant les données précalculées :
-%     % i.e. les Poulaines utilisées comme cible, elles mêmes issues des
-%     % trajectoires angulaires de chaque fichier .c3d de la BDD
-%     % TL&DR : Les trajectoires initiales déformées par l'algo et ciblées
-%     % dans certains cas
-%     PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\';
-%     flag.presets = 0;
-% elseif I=='0'
-%     PathPreSet = 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\';
-%     flag.presets = 1;
-% else
-%     PathPreSet = I;
-%     flag.presets = 0;
-% end
-
 %%
 
 % Si pas de données précalculées, faire tourner une fois en mettant presets
@@ -282,17 +215,7 @@ for ii=1:length(Names)%1%:11:length(Names)
         [Rmarkers, RParam ] = HobisDataParser(DataRef);
 %         [DReperes DSeq NDmarkers NDParam] = ReperesFromMarkers(Dmarkers);
         [RReperes, RSeq, NRmarkers, NRParam] = ReperesFromMarkersCorrected(Rmarkers);
-        A = zeros(1,11);
-%         [tmp, tmpS, tmpmarkers] = fcineshort(A,NDParam, DReperes, Dmarkers);
-%         [tmp, tmpS, tmpmarkers] = fcineshort(A,NDParam, DReperes, NDmarkers);
-        
-%         ConditionA0 = all(all(round(NRParam' - tmpS(2:end,:),6)==zeros(size(NRParam'))));
-%         if ~ConditionA0
-%         end
-%         tmp*1000 - [NDmarkers.LTal1'; NDmarkers.RTal1']
-%         [tmp, tmpS, tmpmarkers] = fcineshort(A,NRParam, RReperes, Rmarkers);
-%         [tmp, tmpS, tmpmarkers] = fcineshort(A,NRParam, RReperes, NRmarkers);
-        
+        A = zeros(1,11);   
         
         Sequence.Pelvis = 'xyz';
         Sequence.LHip = 'zyx';
@@ -302,45 +225,8 @@ for ii=1:length(Names)%1%:11:length(Names)
         
         [PosC,Markers,Reperes] = fcinematique([0 0 0 0 0 0 0 0 0 0 0], Sequence, Rmarkers, RReperes);
         
-%         c.LFemur1(1:3,4) = RReperes.LFemur1(1:3,4);
-%         c.LFemur2(1:3,4) = RReperes.LFemur2(1:3,4);
-%         c.RFemur2(1:3,4) = RReperes.RFemur2(1:3,4);
-%         c.RFemur1(1:3,4) = RReperes.RFemur1(1:3,4);
-%         c.LTibia(1:3,4) = RReperes.LTibia(1:3,4);
-%         c.RTibia(1:3,4) = RReperes.RTibia(1:3,4);
-        
         DisplayMarkers(Markers,1,Reperes);
         
-%         ConditionA0 = all(all(round(NRParam' - tmpS(2:end,:),6)==zeros(size(NRParam'))));
-%         if ~ConditionA0
-%             error('Shit not lining up in kinematic function, angles0 =/= Initial posture')
-%         end
-%         tmp*1000 - [NRmarkers.LTal1'; NRmarkers.RTal1']
-%         for i =1:11
-%             A = zeros(1,11);
-%             A(i)=pi/3
-%             [tmp, tmpmarkers] = fcinematique(A, Sequence, Rmarkers, RReperes);
-%             %                 [tmp, tmpS, tmpmarkers] = fcineshort(A,NDParam, DReperes, NDmarkers);
-%             tmp*1000 - [NDmarkers.LTal1'; NDmarkers.RTal1']
-%             %                 figure(i);
-%             DisplayMarkers(tmpmarkers);
-%             A = zeros(1,11);
-%             A(i)=2*pi/3
-%             [tmp, tmpmarkers] = fcinematique(A, Sequence, Rmarkers, RReperes);
-%             tmp*1000 - [NDmarkers.LTal1'; NDmarkers.RTal1']
-%             %                 figure(i);
-%             DisplayMarkers(tmpmarkers);
-%         end
-        % TODO - Boucler sur Alterations, matcher la pos ini chev à partir
-        % de poulaine chargée et Posture Ref - ne partir sur pos descr que si bexoin compa
-        % extra espece
-%         Alterations;
-%         close all;
-%         PreLoop;
-%         Loop_Batch_Txt;
-%         close all;
-%         save(strcat(dirname,'\',Names{jj},'P','.mat'),'Param','Saved','SNPCA','GT','Conv','PFin','TAFin','X','mem','Iflag','Storing')
-
     end
     if flag.presets
         close all;

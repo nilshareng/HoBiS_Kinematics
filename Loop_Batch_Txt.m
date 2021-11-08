@@ -15,8 +15,9 @@ printflag=0;
 % Ajout de l'option gradient 0, non updaté pour les c3d actuels car pas de convergence de base.
 derflag = 0;
 MaxLoop = 100;
-
-close all;
+SaveV = [];
+SaveM = [];
+% close all;
 while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les convergences sans crash
     % Initialisation des Polynômes des TA.
     NPolA = [];
@@ -208,8 +209,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     end
     
     % Coût énergétique
-    Cost = 0;
-%     Cost = CE(P,TA,M,Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
+%     Cost = 0;
+    Cost = ECShort(P,TA,M,Markers);
     
     % Jerk
     JerkRef = 0;
@@ -217,7 +218,6 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     
     % Sauvegarde des valeurs de contrôle
     Conv = [Conv , [norm(NRef); Cost ; JerkRef]];
-    
     % Affichage
     if printflag
         norm(NRef)
@@ -225,15 +225,6 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         JerkRef
     end
         
-%     % Exit conditions
-%     if((JerkRef<ThreshJerk || Conv(1,c+1)>1.5 || (Conv(1,	c+1)<0.0001))|| (c>3 && Conv(1,c-2)<Conv(1,c-1) && Conv(1,c-1)<Conv(1,c) && Conv(1,c-3)<Conv(1,c-2)))%(N(c+1)<ThreshX || JerkRef<ThreshJerk || outflag || N(c+1)>5)
-%     if((Conv(1,c+1)>1.5 || (Conv(1,	c+1)<0.0001))|| (c>3 && Conv(1,c-2)<Conv(1,c-1) && Conv(1,c-1)<Conv(1,c) && Conv(1,c-3)<Conv(1,c-2)))%(N(c+1)<ThreshX || JerkRef<ThreshJerk || outflag || N(c+1)>5)
-%         c=MaxLoop;
-%     end
-%     
-%     if((JerkRef<ThreshJerk || Conv(1,c+1)>0.2 || (Conv(1,	c+1)<0.0001) && Conv(1,c+1)~=0)|| (c>30 && Conv(1,c-2)<Conv(1,c-1) && Conv(1,c-1)<Conv(1,c) && Conv(1,c-3)<Conv(1,c-2)))%(N(c+1)<ThreshX || JerkRef<ThreshJerk || outflag || N(c+1)>5)
-%         c=MaxLoop;
-%     end
     
     % Calcul de la Jacobienne
     Manipflag =0;
@@ -242,7 +233,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     end
 %     [Jk, V, DJerk] = calc_jacobien_PC_3D(NPCA, NPolA,derflag, 0, X, dp,M, Cost, JerkRef, Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
     [Jk, V, DJerk] = calc_jacobien_PC_4D(NPCA, NPolA,X,dp,M,Cost,JerkRef,Rmarkers,RReperes,Sequence);
-    
+    SaveV = [SaveV , V];
+    SaveM = [SaveM ; NPolA];
     % Si problème de taille de tableau, complétion avec des 1
     if size(V,1)~=2*size(NPCA,1)
         V = [V ; ones(size(Modifs,1)-size(V,1),1)];
@@ -311,7 +303,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         else
             % En général, VSter et JSter =0, donc pas d'influence
 %             Modifs = Jkp*delta + Proj*(V/norm(V))*VSter;
-            Modifs = Jkp*delta ;%+ Proj*(V/norm(V))*VSter;
+            VSter = 0.5*norm(Jkp*delta);
+            Modifs = Jkp*delta + Proj*(V/norm(V))*VSter;
         end
     end
     % Sauvegarde des poids -> inutile ici car je ne les fais plus varier dynamiquement actuellement 
@@ -330,21 +323,18 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     end
     % Incrémentation du compteur de cycles
     c = c+1;
-    figure(10);
+    fconv = figure(12);
+    hold on;
+    title('Convergence de la boucle d''optimisation - somme des distances aux empreintes - en m');
+    subplot(2,1,1);
     hold on;
     plot(1:size(Conv,2),Conv(1,:));
-    title('Convergence de la boucle d''optimisation - somme des distances aux empreintes - en m');
+    subplot(2,1,2);
+    plot(1:size(Conv,2),Conv(2,:));
 end
-% pause;
-%%% Affichages end loop
-% c
-% Conv
-% norm(NRef)
-% Cost
-% JerkRef
 
 [Gait, GaitMarkers, GaitReperes] = Angles2Gait(TA,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
-DisplayGait(GaitMarkers);
+fFGait = DisplayGait(GaitMarkers);
 
 Results = struct;
 Results.Inputs = answer;
@@ -359,6 +349,20 @@ Results.FinalPolynom = NPolA;
 Results.IncrementalPCModification = pModifs;
 Results.Convergence = Conv;
 Results.NCycles = c;
+Results.Figure.Conv = fConv;
+Results.Figure.FinalGait = fFGait;
+Results.MemoryEC = SaveV;
+Results.MemoryPoulaine = SaveM;
+
+
+DisplayGait(GaitMarkers,20,'1');
+
+% NPolA = SaveM(287:287+25,:);
+% [P, TA] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
+% [Gait, GaitMarkers, GaitReperes] = Angles2Gait(TA,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
+% fFGait = DisplayGait(GaitMarkers);
+% DisplayCurves(P);
+% DisplayCurves(TA);
 
 %%
 %%% Selecting, Culling, Saving, ...

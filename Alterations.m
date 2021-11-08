@@ -176,7 +176,7 @@ if MaxPoul > MaxReach
     PoulaineRatio = MaxReach / (MaxPoul+0.1) ;
 end
 
-close all;
+% close all;
 
 PoulaineRatio = 0.8;
 model.gait = model.gait * PoulaineRatio;
