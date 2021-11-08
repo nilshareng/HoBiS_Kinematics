@@ -85,10 +85,12 @@ for j=1:11  % Pour chaque angle
         
         % calcul des gradients CE / Jerk
         if(mod(k,2))
-            V = [V ; (CEShort(P,TA,M,Markers,Reperes)-Cost) /dp(1)];
+%             V = [V ; (CEShort(P,TA,M,Markers,Reperes)-Cost) /dp(1)];
+            V = [V ; (ECShort(P,TA,M,Markers)-Cost) /dp(1)];
             Jer = [Jer; (Jerk(PolModif)-JerkRef)/dp(1)];
         else
-            V = [V ; (CEShort(P,TA,M,Markers,Reperes)-Cost) /dp(2)];
+%             V = [V ; (CEShort(P,TA,M,Markers,Reperes)-Cost) /dp(2)];
+            V = [V ; (ECShort(P,TA,M,Markers)-Cost) /dp(2)];
             Jer = [Jer; (Jerk(PolModif)-JerkRef)/dp(2)];
         end
         
@@ -96,11 +98,6 @@ for j=1:11  % Pour chaque angle
         if(mod(k,2))    % Altération soit de l'abs soit de l'ord du PC
             %             [tmp, tmp1]= ErrorFun(PolModif,X(:,1:2));
             tmp = ErrorFun3(PolModif,X,Sequence,Markers,Reperes);
-            %                 a=tmp;
-            %                 tmp=[];
-            %                 for i =1:size(X,1)
-            %                     tmp = [tmp; X(i,3:end)-a(i,:)];
-            %                 end
             
             % Dérivée de l'erreur par rapport au PC courant
             tmp = (tmp-Ref)/dp(1);
@@ -115,11 +112,7 @@ for j=1:11  % Pour chaque angle
             J(:,Count) = t;
         else % Symétrie entre abscisse et oronnée
             tmp = ErrorFun3(PolModif,X,Sequence,Markers,Reperes);
-            %                 a=tmp;
-            %                 tmp=[];
-            %                 for i =1:size(X,1)
-            %                     tmp = [tmp; X(i,3:end)-a(i,:)];
-            %                 end
+            
             tmp = (tmp-Ref)/dp(2);
             
             t=zeros(3*size(tmp,1),1);
@@ -133,22 +126,6 @@ for j=1:11  % Pour chaque angle
         
     end
 end
-
-% end
-
-
-
-% if param == 1
-%     J=V';
-%     V=[];
-%     Jer=[];
-%     return;
-% elseif param ==2
-%     J =Jer';
-%     Jer=[];
-%     V=[];
-%     return;
-% end
 end
 
 

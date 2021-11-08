@@ -1,13 +1,14 @@
-function [] = DisplayGait(GaitMarkers,N)
+function [f] = DisplayGait(GaitMarkers,N,POV)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
 if nargin == 1
     f=figure(1);
     N = 1;
-elseif nargin == 2
+elseif nargin >= 1
     f=figure(N);
 end
+
 hold on;
 f.WindowState='maximized';
 
@@ -74,7 +75,22 @@ for i = 1:size(C,3)
         
     end
     
-    
+    if nargin == 3
+        switch POV
+            case '1'%'Sagittal1' || '1'
+                view([1 0 0]);
+            case '2'%'Sagittal2' || '2'
+                view([-1 0 0]);
+            case '3'%'Frontal1' || '3'
+                view([0 1 0]);
+            case '4'%'Frontal2' || '4'
+                view([0 -1 0]);
+            case '5'%'Vertical1' || '5'
+                view([0 0 1]);
+            case '6'%'Vertical2' || '6'
+                view([0 0 -1]);
+        end
+    end
     
     P = DisplayModel(tmp,N);
     pause(1/20);
