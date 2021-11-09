@@ -210,7 +210,7 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     
     % Coût énergétique
 %     Cost = 0;
-    Cost = ECShort(P,TA,M,Markers);
+    Cost = ECShort(P,TA,M,Markers,Inertie);
     
     % Jerk
     JerkRef = 0;
@@ -232,7 +232,7 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         Manip;
     end
 %     [Jk, V, DJerk] = calc_jacobien_PC_3D(NPCA, NPolA,derflag, 0, X, dp,M, Cost, JerkRef, Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
-    [Jk, V, DJerk] = calc_jacobien_PC_4D(NPCA, NPolA,X,dp,M,Cost,JerkRef,Rmarkers,RReperes,Sequence);
+    [Jk, V, DJerk] = calc_jacobien_PC_4D(NPCA, NPolA,X,dp,M,Cost,JerkRef,Rmarkers,RReperes,Sequence,Inertie);
     SaveV = [SaveV , V];
     SaveM = [SaveM ; NPolA];
     % Si problème de taille de tableau, complétion avec des 1
