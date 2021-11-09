@@ -323,7 +323,7 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     end
     % Incrémentation du compteur de cycles
     c = c+1;
-    fconv = figure(12);
+    fConv = figure(12);
     hold on;
     title('Convergence de la boucle d''optimisation - somme des distances aux empreintes - en m');
     subplot(2,1,1);
