@@ -1,4 +1,4 @@
-function [res] = ECShort(Poulaine,TA,M,Markers)
+function [res] = ECShort(Poulaine,TA,M,Markers,Inertie)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 Fem1g = Markers.LHRC /1000 ;
@@ -30,8 +30,9 @@ for i = 2:n
     else
         appui=1;
     end
-    Cost = Cost + energie_cinetique(etatc,etatt,M, Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d,poulainegc, poulainegt,poulainedc, poulainedt, appui);
-    
+%     Cost = Cost + energie_cinetique(etatc,etatt,M, Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d,poulainegc, poulainegt,poulainedc, poulainedt, appui);
+    Cost = Cost + energie_cinetique(etatc,etatt,M, Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d,poulainegc, poulainegt,poulainedc, poulainedt, appui,Inertie);
+
     
     
 end

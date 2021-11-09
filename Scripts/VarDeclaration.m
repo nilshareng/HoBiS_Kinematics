@@ -27,9 +27,9 @@ end
 
 % Coûts initiaux ie de référence en Jerk et EC. 
 if flag.txt
-    CostRef = ECShort(Poul,TrajAng,M,Markers);
+    CostRef = ECShort(Poul,TrajAng,M,Markers,Inertie);
 else
-    CostRef = ECShort(Poul,TrajAng,M,Markers);
+    CostRef = ECShort(Poul,TrajAng,M,Markers,Inertie);
 end
 
 JerkRef = Jerk(PolA);
