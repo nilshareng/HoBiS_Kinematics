@@ -21,14 +21,41 @@ flag.prints = 1;
 % PathPreSet = "";
 
 % model.TA =  load(strcat(PathPreSet,"")) ;
-InitialGaitPath = strcat(p,'poulaineAppui.txt');
+% InitialGaitPath = strcat(p,'poulaineAppui.txt');
 
 if strcmp(InitialGaitPath(:,end-2:end),'mat')
     
-    SelectedPreset = 'antho012.mat';
-    load(strcat(PathPreSet,SelectedPreset));
-    Period = length(PN);
-
+%     SelectedPreset = 'antho012.mat';
+    tmpX = X;
+    load(strcat(InitialGaitPath));
+    X = tmpX;
+    [~, t] = sort(abs(min(PN(:,1:3))) + abs(max(PN(:,1:3))));
+    t = [t , t+3];
+    PN = PN(:,t);
+    PN = [PN(:,1) -1*PN(:,2) PN(:,3) PN(:,4) -1*PN(:,5) PN(:,6)];
+    InitialGait = PN;
+    Period = max(size(InitialGait));
+    midPeriod = fix((Period)/2);
+    SplinedPoulaine = [];
+    for i = 1:3
+        SplinedPoulaine(:,i) = Curve2Spline(InitialGait(:,i));
+    end
+    % Symetrisation
+    SplinedPoulaine = GaitSymetrisation(SplinedPoulaine);
+    
+    % Attribution
+    model.gait = SplinedPoulaine;
+    if flag.prints
+       figure;
+       hold on;
+       title('Comparison loaded poulaine vs Spline poulaine');
+       for i = 1:6
+           subplot(2,3,i)
+           hold on;
+           plot(InitialGait(:,i));
+           plot(SplinedPoulaine(:,i));
+       end
+    end
 elseif strcmp(InitialGaitPath(:,end-2:end),'txt')
 
     InitialGait = load(strcat(InitialGaitPath));
@@ -163,34 +190,53 @@ NewPoul = [];
 % Markers.LPoul
 % Markers.RPoul = 
 
-MaxReachL = norm(Markers.LTib1 - Markers.LFem6) + norm(Markers.LFem6 - Markers.LHRC) + norm(Markers.LHRC - [0 0 0]);
-MaxReachR = norm(Markers.RTib1 - Markers.RFem6) + norm(Markers.RFem6 - Markers.RHRC) + norm(Markers.RHRC - [0 0 0]);
+MaxReachL = norm(Markers.LTal1 - Markers.LFem6) + norm(Markers.LFem6 - Markers.LHRC) + norm(Markers.LHRC - [0 0 0]);
+MaxReachR = norm(Markers.RTal1 - Markers.RFem6) + norm(Markers.RFem6 - Markers.RHRC) + norm(Markers.RHRC - [0 0 0]);
 MaxReach = (MaxReachL+MaxReachR)/2;
 N=[]; 
 for i = 1:size(model.gait,1)
     N = [N ; norm(model.gait(i,1:3)), norm(model.gait(i,4:6))];
 end
 MaxPoul = max(max(N))*1000;
-
+PoulaineRatio = 1;
 if MaxPoul > MaxReach
-    PoulaineRatio = MaxReach / (MaxPoul+0.1) ;
+    PoulaineRatio = MaxReach / (MaxPoul+100) ;
 end
+
+N=[]; 
+for i = 1:size(model.gait,1)
+    N = [N ; norm(OPN(i,1:3)), norm(OPN(i,4:6))];
+end
+MaxPoul = max(max(N))*1000;
+PoulaineRatioOld = 1;
+if MaxPoul > MaxReach
+    PoulaineRatioOld = MaxReach / (MaxPoul+100) ;
+end
+
+X(:,3:5) = X(:,3:5)*PoulaineRatioOld;
 
 % close all;
 
-PoulaineRatio = 0.8;
+% PoulaineRatio = 0.8;
+% PoulaineRatio = 1;
+
 model.gait = model.gait * PoulaineRatio;
+
+
+% model.gait(:,3:3:6) = model.gait(:,3:3:6) + ones(size(model.gait(:,3:3:6))) * (-0.2);
+NewPoul=[];
+
 GaitMarkers = [];
 % GaitMarkers = struct;
-
+s = 10;
 %%% "IK" Disgusting fminseach instead, cause it (kinda) works 
 for i =1:size(model.gait,1)
     globaltarget = [model.gait(i,1:3) , model.gait(i,4:6)]';
 %     tmp = fminsearch(@(Angles) KinforMin(Angles,Sequence,globaltarget,Markers,Reperes),TmpAngles,options);
     tmp = TmpAngles;
-    for j = 1:10
+    for j = 1:s
 %         localtarget = CurrentPos + ((globaltarget - CurrentPos)/norm(globaltarget - CurrentPos)) /10;
-        localtarget = CurrentPos + ((globaltarget - CurrentPos)/10);
+        localtarget = CurrentPos + ((globaltarget - CurrentPos)/(s+1-j));
         deltaX = CurrentPos - localtarget;
         J = Jcinematique(TmpAngles,Sequence,Markers,RReperes);
         Jp = pinv(J);
@@ -206,8 +252,8 @@ for i =1:size(model.gait,1)
     [CurrentPos, Cmarkers, Creperes] = fcinematique(tmp,Sequence,Markers,RReperes);
     Cmarkers.CLTarget = globaltarget(1:3)'*1000;
     Cmarkers.CRTarget = globaltarget(4:6)'*1000;
-    Cmarkers.LPoul = model.gait(:,4:6)*1000;
-    Cmarkers.RPoul = model.gait(:,1:3)*1000;
+    Cmarkers.LPoul = model.gait(:,1:3)*1000;
+    Cmarkers.RPoul = model.gait(:,4:6)*1000;
     
     GaitMarkers = [GaitMarkers,Cmarkers];
     
@@ -219,10 +265,15 @@ for i =1:size(model.gait,1)
 %     pause;
 %     close all;
 end
-plot(NewPoul);
-figure;
-hold on;
-plot(NewAngles);
+for i =1:size(model.gait,1)
+    GaitMarkers(i).LOPoul = NewPoul(:,1:3)*1000;
+    GaitMarkers(i).ROPoul = NewPoul(:,4:6)*1000;
+    GaitMarkers(i).X = X(:,3:5)*1000;
+end
+DisplayCurves(NewPoul);
+% figure;
+% hold on;
+DisplayCurves(NewAngles);
 
 %%% Filtering the noisy results
 freq=5;
@@ -262,7 +313,7 @@ for i = 1:11
 end
 
 NewPoulF = NewPoulF(size(NewPoul,1)+1:2*size(NewPoul,1),:);
-DisplayGait(GaitMarkers);
+% DisplayGait(GaitMarkers);
 
 NewAnglesF = NewAnglesF(S+1:2*S,:);
 
@@ -386,6 +437,7 @@ NewAnglesF = NewAnglesF(S+1:2*S,:);
 %     NewPoul =[NewPoul, fcineshort(Angles(i,:), NRParam, RReperes)];
 % end
 %%
+close all;
 MarkersReference = Markers;
 % NewPoul = NewPoul';
 figure;
@@ -427,9 +479,6 @@ for i =1:Period+1
     end
     NewCurve = [NewCurve ; tmp];
 end
-
-
-
 % Expression de la poulaine correspondante à l'approximation TA
 ComputedPoulaine =[];
 for i = 1:max(size(SplinedAngles))
@@ -444,6 +493,48 @@ for i = 1:6
         SplinedComputedPoulaine(:,i) = Var';
         PolP = [PolP ; [i*ones(size(PolT(:,2:end),1),1) , PolT(:,2:end)]];
 end
+
+tmpPCA = ForgePCA(SplinedAngles,0:1/(rate-1):1 ,1 );
+Cheat = tmpPCA(tmpPCA(:,1)<=2,:);
+Cheat(2:2:end,2) = Cheat(1:2:end,2) + 0.5;
+Cheat(2:2:end,3) = -1*Cheat(1:2:end,3);
+tmpPCA(tmpPCA(:,1)<=2,:) = Cheat;
+NPCA = [tmpPCA(tmpPCA(:,1)<=2,:) ; PCA(PCA(:,1)>2,:)];
+
+NPolA = [];
+for i = 1:11
+    temp = PC_to_spline(NPCA(NPCA(:,1)==i,2:3),1);
+    NPolA = [NPolA ; i*ones(size(temp,1),1), temp(:,2:end)];
+end
+
+[tmpP2, tmpTA2] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
+
+figure(6);
+hold on;
+DisplayCurves(tmpTA2,6);
+DisplayCurves(SplinedAngles,6);
+
+figure(2);
+hold on;
+DisplayCurves(tmpP2,2);
+DisplayCurves(ComputedPoulaine,2);
+for i = 1   :3
+    subplot(3,3,X(i,1));
+    hold on;
+    plot(X(i,2)*(size(PN,1)-2)+1,X(i,X(i,1)+2),'kx');
+end
+for i = 4:6
+    subplot(3,3,X(i,1));
+    hold on;
+    plot(X(i,2)*(size(PN,1)-2)+1,X(i,X(i,1)-1),'kx');
+end
+
+
+
+
+
+
+
 
 %% Affichages comparatif
 
