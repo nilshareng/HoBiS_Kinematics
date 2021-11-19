@@ -22,6 +22,9 @@ flag.prints = 1;
 
 % model.TA =  load(strcat(PathPreSet,"")) ;
 % InitialGaitPath = strcat(p,'poulaineAppui.txt');
+MaxReachL = norm(Markers.LTal1 - Markers.LFem6) + norm(Markers.LFem6 - Markers.LHRC) + norm(Markers.LHRC - [0 0 0]);
+MaxReachR = norm(Markers.RTal1 - Markers.RFem6) + norm(Markers.RFem6 - Markers.RHRC) + norm(Markers.RHRC - [0 0 0]);
+MaxReach = (MaxReachL+MaxReachR)/2;
 
 if strcmp(InitialGaitPath(:,end-2:end),'mat')
     
@@ -56,6 +59,7 @@ if strcmp(InitialGaitPath(:,end-2:end),'mat')
            plot(SplinedPoulaine(:,i));
        end
     end
+
 elseif strcmp(InitialGaitPath(:,end-2:end),'txt')
 
     InitialGait = load(strcat(InitialGaitPath));
@@ -85,6 +89,20 @@ elseif strcmp(InitialGaitPath(:,end-2:end),'txt')
            plot(SplinedPoulaine(:,i));
        end
     end
+end
+
+if exist('OPN')
+    N=[];
+    for i = 1:size(model.gait,1)
+        N = [N ; norm(OPN(i,1:3)), norm(OPN(i,4:6))];
+    end
+    MaxPoul = max(max(N))*1000;
+    PoulaineRatioOld = 1;
+    if MaxPoul > MaxReach
+        PoulaineRatioOld = MaxReach / (MaxPoul+100) ;
+    end
+    
+    X(:,3:5) = X(:,3:5)*PoulaineRatioOld;
 end
 
 % Load Joint ranges
@@ -190,9 +208,7 @@ NewPoul = [];
 % Markers.LPoul
 % Markers.RPoul = 
 
-MaxReachL = norm(Markers.LTal1 - Markers.LFem6) + norm(Markers.LFem6 - Markers.LHRC) + norm(Markers.LHRC - [0 0 0]);
-MaxReachR = norm(Markers.RTal1 - Markers.RFem6) + norm(Markers.RFem6 - Markers.RHRC) + norm(Markers.RHRC - [0 0 0]);
-MaxReach = (MaxReachL+MaxReachR)/2;
+
 N=[]; 
 for i = 1:size(model.gait,1)
     N = [N ; norm(model.gait(i,1:3)), norm(model.gait(i,4:6))];
@@ -202,18 +218,6 @@ PoulaineRatio = 1;
 if MaxPoul > MaxReach
     PoulaineRatio = MaxReach / (MaxPoul+100) ;
 end
-
-N=[]; 
-for i = 1:size(model.gait,1)
-    N = [N ; norm(OPN(i,1:3)), norm(OPN(i,4:6))];
-end
-MaxPoul = max(max(N))*1000;
-PoulaineRatioOld = 1;
-if MaxPoul > MaxReach
-    PoulaineRatioOld = MaxReach / (MaxPoul+100) ;
-end
-
-X(:,3:5) = X(:,3:5)*PoulaineRatioOld;
 
 % close all;
 
