@@ -1,55 +1,3 @@
-%%% MàJ 06/09/2021
-%%% Script principal pour le lancer de batchs de tests
-%%% Entrées : Chemins précisés ci-dessous (p et PathPreSet) menant aux données c3d et aux trajectoires cibles
-%%% Sorties : Données issues de la boucle d'optimisation, sauvegardées en .mat dans SavePath
-clear all;
-close all;
-clc;
-
-p = genpath('.');
-addpath(p);
-%addpath("C:\Users\nhareng\Desktop\CodeCommente\hobis");
-
-flag = struct;
-
-flag.c3d = 0;
-flag.txt = 0;
-flag.dyn = 0;
-flag.prints =0;
-
-%% Input part
-%Antho012 - Antho056
-
-prompt = ...
-    {'Enter Ressources directory (absolute) path:',...
-    'Enter Description Posture file (absolute) path:',...
-    'Enter Reference Posture file (absolute) path:',...
-    'Enter PreSets files directory (absolute) path:',...
-    'Initial Poulaine (absolute) path:',...
-    'Model Mass:', ...
-    'Model Articular Range of Motion Min Boundaries in degrees (Pelv*3, LHip*3, LKnee*1, RHip*3, RKnee*1):',...
-    'Model Articular Range of Motion Max Boundaries in degrees (Pelv*3, LHip*3, LKnee*1, RHip*3, RKnee*1):',...
-    'Footprints (target) left footstrike (gait% X Y Z):',...
-    'Footprints (target) left toe off (gait% X Y Z):',...
-    'Footprints (target) left min Z (gait% X Y Z):'...
-    'Enter Save folder Path:'};
-%     'Footprints (target) right footstrike (gait% X Y Z):',...
-%     'Footprints (target) right toe off (gait% X Y Z):',...
-%     'Footprints (target) right min Z (gait% X Y Z):'...
-dlgtitle = 'Inputs';
-dims = [1 110];
-definput = {'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\',...
-    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\description.txt',...
-    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\reference.txt',...
-    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\',...
-    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\antho056.mat',...
-    '70',...
-    '[45 45 45 20 45 30 110 20 45 30 110]',...
-    '[-45 -45 -45 -90 -30 -60 15 -90 -30 -60 15]',...
-    '[0.2000    0.0650   -0.0188   -0.7755]',...
-    '[0.7333    0.1135    0.0585   -0.6367]',...
-    '[0.2833    0.0656    0.0595   -0.7840]'...
-    'C:\Users\nhareng\Desktop\CodeCommente\hobis\Resultats\Txt'};
 
 % Inertie.Rmasse = [0.497,0.1,0.0465];
 % Inertie.CM = [0.495,0.433,0.433];
@@ -64,7 +12,7 @@ definput = {'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\',...
 
 % 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\NewestPresets\antho056.mat',...
 % 'C:\Users\nhareng\Desktop\CodeCommente\hobis\Ressources\poulaine_base.txt',...
-answer = inputdlg(prompt,dlgtitle,dims,definput);
+answer = definput;%inputdlg(prompt,dlgtitle,dims,definput);
 
 model = struct;
 
@@ -95,31 +43,31 @@ M = str2double(answer{6});
 model.jointRangesMin = str2num(answer{7})*pi/180;
 model.jointRangesMax = str2num(answer{8})*pi/180;
 
-X = [str2num(answer{9}) ; str2num(answer{10}) ; str2num(answer{11})];%; str2num(answer{12}) ; str2num(answer{13}) ; str2num(answer{14})];
-X = [X ; X];
-X(4:6,:) = [X(4:6,1) + 0.5 , X(4:6,2)*-1 , X(4:6,3:4)];
-X(X(4:6,1)>1,1) = X(X(4:6,1)>1,1) -1;
-X = [[2;2;3;5;5;6] , X];
+% X = [str2num(answer{9}) ; str2num(answer{10}) ; str2num(answer{11})];%; str2num(answer{12}) ; str2num(answer{13}) ; str2num(answer{14})];
+% X = [X ; X];
+% X(4:6,:) = [X(4:6,1) + 0.5 , X(4:6,2)*-1 , X(4:6,3:4)];
+% X(X(4:6,1)>1,1) = X(X(4:6,1)>1,1) -1;
+% X = [[2;2;3;5;5;6] , X];
 flag.steps = 1;
 flag.txt = 1;
-SavePath = answer{12};
+SavePath = answer{9};
 Names = {DataDes(1:end-4)};
 
-prompt = {...
-    'Inertia - Pelvis segment, expressed at segment center of mass'...
-    'Inertia - Hip segment, expressed at segment center of mass'...
-    'Inertia - Leg segment, expressed at segment center of mass'...
-    'Inertia Center of mass position (% of segment - proximal to distal)'};
-
-dlgtitle = 'Inertial inputs';
-dims = [1 110];
-definput = {...
+% prompt = {...
+%     'Inertia - Pelvis segment, expressed at segment center of mass'...
+%     'Inertia - Hip segment, expressed at segment center of mass'...
+%     'Inertia - Leg segment, expressed at segment center of mass'...
+%     'Inertia Center of mass position (% of segment - proximal to distal)'};
+% 
+% dlgtitle = 'Inertial inputs';
+% dims = [1 110];
+definput2 = {...
     '[60.8189 0 0 ; 0 60.8189 0 ; 0 0 52.1215]'...
     '[0.1807 0 0 ; 0 0.1807 0 ; 0 0  0.1481]'...
     '[0.0806 0 0 ; 0 0.0806 0 ; 0 0 0.0611]'...
     '[0.497,0.1,0.0465]'};
 
-answerInertia = inputdlg(prompt,dlgtitle,dims,definput);
+answerInertia = definput2;
 
 Inertie.Pelvis = str2num(answerInertia{1});
 Inertie.Hip = str2num(answerInertia{2});
@@ -275,19 +223,10 @@ for ii=1:length(Names)%1%:11:length(Names)
         PreLoop;
         save(strcat(PathPreSet,Names{ii},'.mat'),'PN','Pol','Param','X', 'R_monde_local','R_Pelvis_monde_local', 'R_LFem_ref_local', 'R_LTib_ref_local', 'R_RFem_ref_local', 'R_RTib_ref_local');
         
-        %     if flag.dyn
-        %         Test = spline_to_curve(Pol, 1, 1/202 );
-        %         Test = Test(1:end-3,:);
-        %         Test =[Test(126:end,:);Test(1:125,:)];
-        %         Test = [Test ; Test ; Test];
-        %         fileID = fopen('C:\Users\nhareng\Desktop\CodeCommente\DataLouise\DataLouise.txt','w');
-        %         fprintf(fileID,'%8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s\n', 'PelX', 'PelY', 'PelZ', 'RHipX', 'RHipY', 'RHipZ', 'LHipX', 'LHipY', 'LHipZ', 'RKneeX', 'LKneeX');
-        %         fprintf(fileID,'%8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f\n', Test);
-        %         fclose(fileID);
-        %     end
+       
     else
         for jj =1%1:length(Names)%1:length(Names)-1
-            %             jj
+          
             % Deuxième phase, à la marche courante, on va successivement appliquer
             % les autres marches en tant que cibles.
             if size(Names{jj}(1:end-3),2)==size(Names{ii}(1:end-3),2) || flag.dyn
@@ -303,7 +242,7 @@ for ii=1:length(Names)%1%:11:length(Names)
                 else
                     if flag.txt
                         Alterations;
-                        PreLoop;
+%                         PreLoop;
                         Loop_Batch_Txt;
                         close all;
                     end
@@ -311,7 +250,6 @@ for ii=1:length(Names)%1%:11:length(Names)
 %                     Loop_Batch;
                     close all; % Just in case
                     
-                    save(strcat(SavePath,'\',num2str(fix(clock)),'.mat'),'Results');
                 end
             end
         end
@@ -320,7 +258,5 @@ for ii=1:length(Names)%1%:11:length(Names)
     %     % dans la phase 2 et 3
     
 end
-
-
 
 
