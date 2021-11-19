@@ -32,14 +32,14 @@ for i = 1:size(C,3)
     end
     if any(strcmp('LPoul',fieldnames(tmp))) && any(strcmp('RPoul',fieldnames(tmp)))
         
-        plot3(tmp.LPoul(:,1),tmp.LPoul(:,2),tmp.LPoul(:,3),'b');
+        plot3(tmp.LPoul(:,1),tmp.LPoul(:,2),tmp.LPoul(:,3),'bo');
 %         f = figure('WindowState','maximized');
         xlim([-600 600]);
         ylim([-600 600]);
         zlim([-1000 200]);
         
         hold on;
-        plot3(tmp.RPoul(:,1),tmp.RPoul(:,2),tmp.RPoul(:,3),'r');
+        plot3(tmp.RPoul(:,1),tmp.RPoul(:,2),tmp.RPoul(:,3),'ro');
     end
      if any(strcmp('LFPoul',fieldnames(tmp))) && any(strcmp('RFPoul',fieldnames(tmp)))
         

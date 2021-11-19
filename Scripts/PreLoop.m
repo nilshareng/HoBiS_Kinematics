@@ -122,10 +122,10 @@ if ~flag.steps
     % X(1,3) = X(1,3) + 0.01;
     % X(4,3) = X(4,3) + 0.01;
     
-    if ii==jj
-        R = rand(6,3);
-        X(:,3:5) = X(:,3:5) + 0.01*(R/norm(R));
-    end
+%     if ii==jj
+%         R = rand(6,3);
+%         X(:,3:5) = X(:,3:5) + 0.01*(R/norm(R));
+%     end
     
 % elseif 
 %     % X format : 6*5 ; Xd;Yd;Zd;Xg;Yg;Zg - CurveN°(1-6) , %ofStepTime , X,Y,Z  
@@ -153,11 +153,11 @@ else
     % Création du vecteur des points cibles - X
     % La première colonne repère la courbe dont est issu le point originalement.
     % C'était pour le calcul des tangentes, mais c'est pas utile actuellement.
-    if all(X(:,2:end)==zeros(size(X(:,2:end))))
-        X = [2;2;3;5;5;6];
-        X = [X , (A-1)/Period];
-        X = [X , [GT(A(1:3),1:3) ; GT(A(4:6),4:6)]];
-    end
+%     if all(all(X(:,2:end)==zeros(size(X(:,2:end)))))
+%         X = [2;2;3;5;5;6];
+%         X = [X , (A-1)/Period];
+%         X = [X , [GT(A(1:3),1:3) ; GT(A(4:6),4:6)]];
+%     end
     
     % Introduction d'un delta -> tests
     % X(1,3) = X(1,3) + 0.1;
@@ -172,10 +172,10 @@ else
     % X(1,3) = X(1,3) + 0.01;
     % X(4,3) = X(4,3) + 0.01;
     
-    if ii==jj
-        R = rand(6,3);
-        X(:,3:5) = X(:,3:5) + 0.01*(R/norm(R));
-    end
+%     if ii==jj
+%         R = rand(6,3);
+%         X(:,3:5) = X(:,3:5) + 0.01*(R/norm(R));
+%     end
 end
 
 

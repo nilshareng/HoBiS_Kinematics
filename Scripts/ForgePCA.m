@@ -51,7 +51,7 @@ elseif Option == 1
             temp = [temp(1:b-1,:) ; temp(b+1:end,:)];
             % A l'origine, il devait y avoir plus de PCA, d'où le bordel pour un simple min/max 
             
-            if i==7 || i ==11 %|| i==4 ||i==8 %||i==5 ||i==9 
+            if i== 3 || i==7 || i ==11 %|| i==4 ||i==8 %||i==5 ||i==9 
                 % Pour les genoux (7 et 11 en DDL), il faut 4 points 
                 if size(temp,1)<2
                     % Si il n'en détecte pas assez, on ne peut plus prendre

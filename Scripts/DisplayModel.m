@@ -36,8 +36,8 @@ RC = [(Markers.RFWT(1:3) + Markers.LFWT(1:3))/2 ; Markers.LHRC ; Markers.RHRC ; 
 
 P(6) = plot3(RC(:,1), RC(:,2), RC(:,3),'ko');
 
-xlim([-600 600]);
-ylim([-600 600]);
-zlim([-1000 200]);
+% xlim([-600 600]);
+% ylim([-600 600]);
+% zlim([-1000 200]);
 end
 
