@@ -32,25 +32,25 @@ for i = 1:size(C,3)
     end
     if any(strcmp('LPoul',fieldnames(tmp))) && any(strcmp('RPoul',fieldnames(tmp)))
         
-        plot3(tmp.LPoul(:,1),tmp.LPoul(:,2),tmp.LPoul(:,3),'bo');
+        plot3(tmp.LPoul(:,1),tmp.LPoul(:,2),tmp.LPoul(:,3),'r--','LineWidth', 1);
 %         f = figure('WindowState','maximized');
         xlim([-600 600]);
         ylim([-600 600]);
         zlim([-1000 200]);
         
         hold on;
-        plot3(tmp.RPoul(:,1),tmp.RPoul(:,2),tmp.RPoul(:,3),'ro');
+        plot3(tmp.RPoul(:,1),tmp.RPoul(:,2),tmp.RPoul(:,3),'b--','LineWidth', 1);
     end
      if any(strcmp('LFPoul',fieldnames(tmp))) && any(strcmp('RFPoul',fieldnames(tmp)))
         
-        plot3(tmp.LFPoul(:,1),tmp.LFPoul(:,2),tmp.LFPoul(:,3),'b');
+        plot3(tmp.LFPoul(:,1),tmp.LFPoul(:,2),tmp.LFPoul(:,3),'r','LineWidth', 1);
 %         f = figure('WindowState','maximized');
         xlim([-600 600]);
         ylim([-600 600]);
         zlim([-1000 200]);
         
         hold on;
-        plot3(tmp.RFPoul(:,1),tmp.RFPoul(:,2),tmp.RFPoul(:,3),'r');
+        plot3(tmp.RFPoul(:,1),tmp.RFPoul(:,2),tmp.RFPoul(:,3),'b','LineWidth', 1);
      end
      if any(strcmp('LOPoul',fieldnames(tmp))) && any(strcmp('ROPoul',fieldnames(tmp)))
         
@@ -65,7 +65,7 @@ for i = 1:size(C,3)
      end
      if any(strcmp('X',fieldnames(tmp)))
         for ii = 1:size(tmp.X,1)
-        plot3(tmp.X(ii,1),tmp.X(ii,2),tmp.X(ii,3),'kx');
+        plot3(tmp.X(ii,1),tmp.X(ii,2),tmp.X(ii,3),'kx','LineWidth', 2);
         hold on;
         end
 %         f = figure('WindowState','maximized');
