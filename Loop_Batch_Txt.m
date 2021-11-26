@@ -14,10 +14,10 @@ printflag=0;
 
 % Ajout de l'option gradient 0, non updaté pour les c3d actuels car pas de convergence de base.
 derflag = 0;
-MaxLoop = 100;
+MaxLoop = 50;
 SaveV = [];
 SaveM = [];
-% close all;
+close all;
 while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les convergences sans crash
     % Initialisation des Polynômes des TA.
     NPolA = [];
@@ -103,23 +103,6 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         end
         NPCA(NPCA(:,1)==i,:)=tmp(I,:);
     end 
-    
-    % Stockage du NPCA calculé à ce cycle
-%     Storing = [Storing ; c*ones(size(NPCA,1),1) , NPCA];
-    
-    
-% %  Gestion des détails - Deprecated  
-%     if c>=0
-%         tem = Details2(TempPCA, NPCA, E);
-%         if isempty(tem) && ~isempty(Emem)
-%             E = Emem(2:end, end-size(EpsilonOrig,2):end);
-%         elseif isempty(tem)
-%             E = EpsilonOrig;
-%         else
-%             E = tem;
-%         end
-%         Emem = [Emem , [ones(1,size(E,2));E]];
-%     end
 
     % To prevent crashes... Toujours le pb de t =0 pour un PCA...
     for i =1:size(NPCA,1)
@@ -127,9 +110,7 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
             NPCA(i,2)=eps;
         end
     end
-    
-    
-    
+
     
     % Calcul des Polynomes NPolA entre les NPCA
     for i = 1:11
@@ -156,20 +137,20 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     end
     
     [tmpP2, tmpTA2] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
-    DisplayCurves(tmpP2,10);
-    DisplayCurves(tmpTA2,11);
-    figure(10);
-    hold on;
-    for i = 1:3
-        subplot(3,3,X(i,1));
-        hold on;
-        plot(X(i,2)*(size(P,1)-2)+1,X(i,X(i,1)+2),'kx');
-    end
-    for i = 4:6
-        subplot(3,3,X(i,1));
-        hold on;
-        plot(X(i,2)*(size(P,1)-2)+1,X(i,X(i,1)-1),'kx');
-    end
+%     DisplayCurves(tmpP2,10);
+%     DisplayCurves(tmpTA2,11);
+%     figure(10);
+%     hold on;
+%     for i = 1:3
+%         subplot(3,3,X(i,1));
+%         hold on;
+%         plot(X(i,2)*(size(P,1)-2)+1,X(i,X(i,1)+2),'kx');
+%     end
+%     for i = 4:6
+%         subplot(3,3,X(i,1));
+%         hold on;
+%         plot(X(i,2)*(size(P,1)-2)+1,X(i,X(i,1)-1),'kx');
+%     end
     
     % Calcul de la fonction de coût pour les NPCA
     NRef = [];
@@ -337,7 +318,7 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         else
             % En général, VSter et JSter =0, donc pas d'influence
 %             Modifs = Jkp*delta + Proj*(V/norm(V))*VSter;
-            VSter = 0.5*norm(Jkp*delta);
+            VSter = -0.5*norm(Jkp*delta);
             Modifs = Jkp*delta + Proj*(V/norm(V))*VSter;
         end
     end
@@ -376,38 +357,41 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
 end
 
 [Gait, GaitMarkers, GaitReperes] = Angles2Gait(tmpTA2,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
+% close(figure(1));
+close all;
 fFGait = DisplayGait(GaitMarkers);
 
-DisplayCurves(P,2);
-DisplayCurves([P(:,4:6), P(:,1:3)],2);
-DisplayCurves(tmpTA2,3);
-DisplayCurves([tmpTA2(:,1:3), tmpTA2(:,8:11) , tmpTA2(:,4:7)],3);
-% DisplayCurves(Spline,3);
-
+% DisplayCurves(P,2);
+% DisplayCurves([P(:,4:6), P(:,1:3)],2);
+% DisplayCurves(tmpTA2,3);
+% DisplayCurves([tmpTA2(:,1:3), tmpTA2(:,8:11) , tmpTA2(:,4:7)],3);
 
 Results = struct;
 Results.Inputs = answer;
-Results.InitialPoulaine = model.gait;
+Results.InitialPoulaine = InitialGait;
+Results.InitialPoulaineScaled = model.gait;
+Results.InitialPoulaineScaledIK = NewPoul;
+Results.InitialSplinedPoulaine = SplinedComputedPoulaine;
+Results.FinalPoulaine = P;
+Results.TAPostIK = NewAngles;
+Results.TAFinal = TA;
 Results.InitialReference = model.reference;
 Results.InitialDescription = model.description;
-Results.InitialSplinedPoulaine = SplinedComputedPoulaine;
 Results.InitialSplinedAngles = SplinedAngles;
-Results.X = X;
+Results.OriginalX = tmpX;
+Results.ScaledX = X;
 Results.InitialPolynom = PolA;
 Results.FinalPolynom = NPolA;
-Results.FinalP = P;
-Results.FinalTA = TA;
 Results.IncrementalPCModification = pModifs;
 Results.Convergence = Conv;
 Results.NCycles = c;
-Results.Figure.Conv = fConv;
-Results.Figure.FinalGait = fFGait;
+% Results.Figure.Conv = fConv;
+% Results.Figure.FinalGait = fFGait;
 Results.MemoryEC = mV;
 Results.MemoryPoulaine = SaveM;
 Results.GaitMarkers = GaitMarkers;
 
-DisplayGait(GaitMarkers,20,'4');
-
+% DisplayGait(GaitMarkers,20,'4');
 
 Spline = [];
 I = 60;
@@ -426,136 +410,4 @@ for i = 1:11
     end
     Spline = [Spline, TS2];
 end
-
-% %%
-% 
-% % NPolA = SaveM(287:287+25,:);
-% 
-% [P1, TA1] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
-% [P2, TA2] = Sampling_txt(GaitSymetrisation(NPolA),Period,Sequence,Markers,Reperes);
-% TA2 = TA1;
-% 
-% % figure(20);
-% % hold on;
-% % DisplayCurves(P1,20);
-% % DisplayCurves(P2,20);
-% 
-% % figure(21);
-% % hold on;
-% % DisplayCurves(TA1,21);
-% % DisplayCurves(TA2,21);
-% 
-% NewCurve = [];
-% for i =1:60
-%     tmp=zeros(1,11);
-%     for j=1:11
-%         tmp(j) = EvalSpline(Pol(Pol(:,1)==j,:),((i-1))/60);
-%     end
-%     NewCurve = [NewCurve ; tmp];
-% end
-% 
-% TA2(:,1) = TA2(:,1) - mean(TA2(:,1));
-% TA2(:,2) = TA2(:,2) - mean(TA2(:,2));
-% TA2(:,3) = TA2(:,3) - mean(TA2(:,3));
-% 
-% 
-% % TA2(:,8) = -1*[TA2(mid+1:end,4) ; TA2(1:mid,4)];
-% % TA2(:,8) = TA1(:,4);
-% TA2(:,9) = [TA2(mid+1:end,5) ; TA2(1:mid,5)];
-% 
-% % TA2(:,6) = TA1(:,6);
-% % TA2(:,7) = TA1(:,7);
-% TA2(:,10) = [TA2(mid+1:end,6) ; TA2(1:mid,6)];
-% % TA2(:,11) = TA1(:,11);
-% 
-% figure;
-% hold on;
-% seq = [1 2 3 5 6 7 8 5 6 7 8];
-% for i = 1:11
-%     subplot(2,4,seq(i));
-%     hold on;
-%     plot(TA1(:,i),'rx');
-%     plot(TA2(:,i),'go');
-%     plot(NewCurve(:,i),'b')
-% end
-% 
-% 
-% 
-% 
-% [Gait, GaitMarkers, GaitReperes] = Angles2Gait(TA2,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
-% % fFGait = DisplayGait(GaitMarkers,2,'4');
-% TS = [];
-% for i=1:size(TA2,1)
-%     % Evaluation de la Poulaine associée
-%     TS = [TS; (fcinematique(TA2(i,:),Sequence,Markers,Reperes))'];
-% end
-% 
-% for i = 1:61
-%     GaitMarkers(i).RFPoul = TS(:,1:3)*1000;
-%     GaitMarkers(i).LFPoul = TS(:,4:6)*1000;
-% end
-% % close all;
-% DisplayCurves(TS,20);
-% DisplayCurves(P1,20);
-% 
-% fFGait = DisplayGait(GaitMarkers);
-% 
-% % %%
-% % 
-% % % [Gait, GaitMarkers, GaitReperes] = Angles2Gait(TA,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
-% % % fFGait = DisplayGait(GaitMarkers);
-% % NPolA = SaveM(1:1+25,:);
-% % DisplayCurves(P1,20);
-% % % DisplayCurves(TA1,21);
-% % 
-% % 
-% % 
-% % [P2, TA2] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
-% % % [Gait, GaitMarkers, GaitReperes] = Angles2Gait(TA,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
-% % % fFGait = DisplayGait(GaitMarkers);
-% % DisplayCurves(P2,20);
-% % % DisplayCurves(TA2,21);
-% % 
-% % % figure(1); % TA - Original, puis successifs
-% % % hold on;
-% % % for i = 1:11
-% % %     subplot(3,4,i);
-% % %     hold on;
-% % %     xlabel('cycle de marche, %');
-% % %     ylabel('trajectoire articulaire, rad');
-% % %     plot(0:1/(Period):1,TA1(:,i),'b');
-% % %     plot(0:1/(Period):1,TA2(:,i),'r--');
-% % % end
-% % % sgtitle('Traj. angulaires sur cycle de marche. G à D : bX, bY,bZ, hgX, hgY, hgZ, ggX, hdX, hdY, hdZ, gdX');
-% % % hold off;
-% % 
-% % figure(2); % Poulaines - Originale en rouge, puis successifs, et X
-% % for i = 1:6
-% %     subplot(2,3,i);
-% %     hold on;
-% %     xlabel('cycle de marche, %');
-% %     ylabel('position cheville, m');
-% %     %             plot(0:1/(Period-1):1,Spline(:,i),'g--');
-% %     plot(0:1/(Period):1,P2(:,i),'r--');
-% %     %             plot(0:1/(Period-1):1,PN(:,i),'b');
-% %     
-% %     if i<4
-% %         plot(X(1:size(X,1)/2,2),X(1:size(X,1)/2,i+2),'kx','MarkerSize',10);
-% %         
-% %     else
-% %         plot(X(size(X,1)/2+1:end,2),X(size(X,1)/2+1:end,i-1),'kx','MarkerSize',10);
-% %     end
-% %     if c==0 && size(dp,2)==3
-% %         %                 plot(0:1/Period:1,PN(:,i));
-% %         plot(0:1/(Period):1,P1(:,i));
-% %     else
-% %         plot(0:1/(Period):1,P1(:,i));
-% %     end
-% %     
-% % end
-% 
-% %%
-%%% Selecting, Culling, Saving, ...
-% PostProcessing;
-
 

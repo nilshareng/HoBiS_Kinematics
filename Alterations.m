@@ -31,11 +31,18 @@ if strcmp(InitialGaitPath(:,end-2:end),'mat')
 %     SelectedPreset = 'antho012.mat';
     tmpX = X;
     load(strcat(InitialGaitPath));
+    PX = X;
+    PX = Xtreat(PX);
     X = tmpX;
     [~, t] = sort(abs(min(PN(:,1:3))) + abs(max(PN(:,1:3))));
     t = [t , t+3];
     PN = PN(:,t);
     PN = [PN(:,1) -1*PN(:,2) PN(:,3) PN(:,4) -1*PN(:,5) PN(:,6)];
+%     OPN = [OPN(:,1) -1*OPN(:,2) OPN(:,3) OPN(:,4) -1*OPN(:,5) OPN(:,6)];
+
+%     [X(1:3,3:-1:1), PN] = Ratio2merde(PX,PN,X,OPN,MaxReach);    
+%     X = Xtreat(X);
+    
     InitialGait = PN;
     Period = max(size(InitialGait));
     midPeriod = fix((Period)/2);
@@ -93,7 +100,7 @@ end
 
 if exist('OPN')
     N=[];
-    for i = 1:size(model.gait,1)
+    for i = 1:min(size(model.gait,1),size(OPN,1))
         N = [N ; norm(OPN(i,1:3)), norm(OPN(i,4:6))];
     end
     MaxPoul = max(max(N))*1000;
