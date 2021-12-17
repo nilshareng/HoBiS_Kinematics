@@ -1,18 +1,5 @@
 %%% Handles the difference between loading a .c3d walk and a simple model
 
-% model = struct;
-
-% p = 'C:\Users\nhareng\Documents\Prog\Matlab\Test\warping 2006\';
-% Param = [Fem1g',Fem6g',Tal1g', Fem1d', Fem6d', Tal1d'];
-
-% Load Model - Posture Description
-
-
-% Load Model - Posture Reference
-
-% % Load Tracks - Empreintes Cibles 2 XYZ coordinates, in Pelvic frame coordinates 
-
-% flag.prints = 0;
 flag.prints = 1;
 
 
@@ -26,116 +13,149 @@ MaxReachL = norm(Markers.LTal1 - Markers.LFem6) + norm(Markers.LFem6 - Markers.L
 MaxReachR = norm(Markers.RTal1 - Markers.RFem6) + norm(Markers.RFem6 - Markers.RHRC) + norm(Markers.RHRC - [0 0 0]);
 MaxReach = (MaxReachL+MaxReachR)/2;
 
-if strcmp(InitialGaitPath(:,end-2:end),'mat')
-    
-%     SelectedPreset = 'antho012.mat';
-    tmpX = X;
-    load(strcat(InitialGaitPath));
-    PX = X;
-    PX = Xtreat(PX);
-    X = tmpX;
-    [~, t] = sort(abs(min(PN(:,1:3))) + abs(max(PN(:,1:3))));
-    t = [t , t+3];
-    PN = PN(:,t);
-    PN = [PN(:,1) -1*PN(:,2) PN(:,3) PN(:,4) -1*PN(:,5) PN(:,6)];
-%     OPN = [OPN(:,1) -1*OPN(:,2) OPN(:,3) OPN(:,4) -1*OPN(:,5) OPN(:,6)];
+switch InitialGaitPath(:,end-2:end)
+    case 'mat' 
+        % A preset was chosen as the initial Gait. Ergo :
+        % - There is a set of prints available
+        InputX = X;
+        clear 'X';
+        load(strcat(InitialGaitPath));
+        
+        if exist('X')
+            PresetPrints = X;
+        else
+            PresetPrints = 'No Presets';
+        end
+        X = InputX;
+        %%%% OLD Stuff to Cut
+        tmpX = X;
+        load(strcat(InitialGaitPath));
+        PX = X;
+        PX = Xtreat(PX);
+        X = tmpX;
+        [~, t] = sort(abs(min(PN(:,1:3))) + abs(max(PN(:,1:3))));
+        t = [t , t+3];
+        PN = PN(:,t);
+        PN = [PN(:,1) -1*PN(:,2) PN(:,3) PN(:,4) -1*PN(:,5) PN(:,6)];
+        if exist('OPN')
+            OPN = [OPN(:,1) -1*OPN(:,2) OPN(:,3) OPN(:,4) -1*OPN(:,5) OPN(:,6)];
+        else
+            OPN = PN;
+        end
+        
+        %     [X(1:3,3:-1:1), PN] = Ratio2merde(PX,PN,X,OPN,MaxReach);
+        %     X = Xtreat(X);
+        
+        InitialGait = PN;
+        Period = max(size(InitialGait));
+        midPeriod = fix((Period)/2);
+        SplinedPoulaine = [];
+        for i = 1:3
+            SplinedPoulaine(:,i) = Curve2Spline(InitialGait(:,i));
+        end
+        % Symetrisation
+        SplinedPoulaine = GaitSymetrisation(SplinedPoulaine);
+        
+        % Attribution
+        model.gait = SplinedPoulaine;
+        if flag.prints
+            figure;
+            hold on;
+            title('Comparison loaded poulaine vs Spline poulaine');
+            for i = 1:6
+                subplot(2,3,i)
+                hold on;
+                plot(InitialGait(:,i));
+                plot(SplinedPoulaine(:,i));
+            end
+        end
 
-%     [X(1:3,3:-1:1), PN] = Ratio2merde(PX,PN,X,OPN,MaxReach);    
-%     X = Xtreat(X);
-    
-    InitialGait = PN;
-    Period = max(size(InitialGait));
-    midPeriod = fix((Period)/2);
-    SplinedPoulaine = [];
-    for i = 1:3
-        SplinedPoulaine(:,i) = Curve2Spline(InitialGait(:,i));
-    end
-    % Symetrisation
-    SplinedPoulaine = GaitSymetrisation(SplinedPoulaine);
-    
-    % Attribution
-    model.gait = SplinedPoulaine;
-    if flag.prints
-       figure;
-       hold on;
-       title('Comparison loaded poulaine vs Spline poulaine');
-       for i = 1:6
-           subplot(2,3,i)
-           hold on;
-           plot(InitialGait(:,i));
-           plot(SplinedPoulaine(:,i));
-       end
-    end
-
-elseif strcmp(InitialGaitPath(:,end-2:end),'txt')
-
-    InitialGait = load(strcat(InitialGaitPath));
-    if size(InitialGait,2) == 7
-       InitialGait = InitialGait(:,2:end); 
-    end
-    % Spline Approx of Initial Gait
-    Period = max(size(InitialGait));
-    midPeriod = fix((Period)/2);
-    SplinedPoulaine = [];
-    for i = 1:3
-        SplinedPoulaine(:,i) = Curve2Spline(InitialGait(:,i));
-    end
-    % Symetrisation
-    SplinedPoulaine = GaitSymetrisation(SplinedPoulaine);
-    
-    % Attribution
-    model.gait = SplinedPoulaine;
-    if flag.prints
-       figure;
-       hold on;
-       title('Comparison loaded poulaine vs Spline poulaine');
-       for i = 1:6
-           subplot(2,3,i)
-           hold on;
-           plot(InitialGait(:,i));
-           plot(SplinedPoulaine(:,i));
-       end
-    end
+        
+    case 'txt'
+        InputX = X;
+        InitialGait = load(strcat(InitialGaitPath));
+        if size(InitialGait,2) == 7
+            InitialGait = InitialGait(:,2:end);
+        elseif size(InitialGait,2) == 3
+            InitialGait = [InitialGait,  InitialGait];
+            InitialGait(:,4:6) = [InitialGait];
+        end
+        OPN = InitialGait;
+        XPoulaineIn = FindFootprints(OPN);
+        
+        % Spline Approx of Initial Gait
+        Period = max(size(InitialGait));
+        midPeriod = fix((Period)/2);
+        SplinedPoulaine = [];
+        for i = 1:3
+            SplinedPoulaine(:,i) = Curve2Spline(InitialGait(:,i));
+        end
+        % Symetrisation
+        SplinedPoulaine = GaitSymetrisation(SplinedPoulaine);
+        
+        % Attribution
+        model.gait = SplinedPoulaine;
+        PN = SplinedPoulaine;
+        XPoulaineInScaled = FindFootprints(PN);
+        if flag.prints
+            figure;
+            hold on;
+            title('Comparison loaded poulaine vs Spline poulaine');
+            for i = 1:6
+                subplot(2,3,i)
+                hold on;
+                plot(InitialGait(:,i));
+                plot(SplinedPoulaine(:,i));
+            end
+        end
+        
 end
 
+%%% Scaling of the Inputs to match the model 
+
+% TODO : Scale the input Poulaine to match the model 
+
+% Translate the Input Poulaine Lowest Z print on the foot in Ref Posture Ankle
+% Apply X/Y/Z Ratio to the Poulaine
+
+% PN = PoulaineScaling();
+
+% TODO :  Scale the input X to match the model 
+
+% Translate the Input X min Z at the same position as the Ref Posture Ankle 
+% Apply the X/Y/Z Ratio to the Xs
+
+% X = PrintsScaling();
+
 if exist('OPN')
+    
+    PoulaineRatioOld = 1;
+    if any(abs(X(:,5)*1000)>MaxReach)
+        X(abs(X(:,5)*1000)>MaxReach,5) = X(abs(X(:,5)*1000)>MaxReach,5) + min( MaxReach - abs(X(abs(X(:,5)*1000)>MaxReach,5))*1000,0)*0.001;
+    end
     N=[];
     for i = 1:min(size(model.gait,1),size(OPN,1))
         N = [N ; norm(OPN(i,1:3)), norm(OPN(i,4:6))];
     end
     MaxPoul = max(max(N))*1000;
-    PoulaineRatioOld = 1;
     if MaxPoul > MaxReach
         PoulaineRatioOld = MaxReach / (MaxPoul+100) ;
     end
-    
+%     X(:,3:4) = X(:,3:4)*PoulaineRatioOld;
+%     X(:,5) = X(:,5)*((PoulaineRatioOld+1)/2);
     X(:,3:5) = X(:,3:5)*PoulaineRatioOld;
+    OOPN = OPN;
+    OPN = OPN*PoulaineRatioOld;
 end
 
 % Load Joint ranges
-% model.jointRangesMax =[-45; -45; -45; -90; -30; -60; 15; -90; -30; -60; 15]*pi/180;
-% model.jointRangesMin=[45; 45; 45; 20; 45; 30; 110; 20; 45; 30; 110]*pi/180;
-Tmp = [];
-for i = 1: size(model.gait,1)
-    Tmp = [Tmp, [RReperes.Monde(1:3,1:3)^-1 * model.gait(i,1:3)' ; RReperes.Monde(1:3,1:3)^-1 * model.gait(i,4:6)']];
-end
-model.Ngait = Tmp';
-% PathButees = "";
-% model.jointRanges = load(strcat(PathButees,""));
+% 
+% Tmp = [];
+% for i = 1: size(model.gait,1)
+%     Tmp = [Tmp, [RReperes.Monde(1:3,1:3)^-1 * model.gait(i,1:3)' ; RReperes.Monde(1:3,1:3)^-1 * model.gait(i,4:6)']];
+% end
+% model.Ngait = Tmp';
 
-% Compute Description to Reference angles 
-% Test with NG function
-
-% anglesD2R = description2reference(strcat(p,'description.txt'),strcat(p,'reference.txt'));
-% PosCheckRef = fcine_numerique_H2(anglesD2R,Param(:,1)',Param(:,2)',Param(:,3)',Param(:,4)',Param(:,5)',Param(:,6)', R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
-
-% Compute Reference to initial trajectory angles
-% Test with NG function
-
-% anglesR2I = position_initiale(anglesD2R,model.gait(1,1:3), model.gait(1,1:3),  model.jointRangesMax, model.jointRangesMin, Param(1,:), Param(2,:), Param(:,3)', Param(4,:), Param(5,:), Param(6,:))';
-% Vérif TA 
-% PosCheckIni = fcine_numerique_H2(anglesR2I,Param(:,1)',Param(:,2)',Param(:,3)',Param(:,4)',Param(:,5)',Param(:,6)', R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
-% PosCheckIni = fcineshort(anglesR2I, NRParam, RReperes)
 anglesR2I = zeros(11,1);
 
 % Compute full Initial Articular Trajectories corresponding to Initial Gait - Full IK, puis Spline 
@@ -164,10 +184,9 @@ AnglesDesc2Ref = fminsearch(@(Angles) KinforMin(Angles,Sequence,Target,Markers,R
 [CurrentPos, Cmarkers, Creperes] = fcinematique(AnglesDesc2Ref,Sequence,Markers,RReperes);
 DisplayMarkers(Cmarkers,1,Creperes);
 error = CurrentPos*1000 - [Rmarkers.LTal1' ; Rmarkers.RTal1'];%/1000
-norm(error)
+norm(error);
+
 %%% Fonctionnel au dessus
-
-
 
 % Deuxieme IK pour positionner en frame ini walk. LE reste fout la merde
 TmpAngles = zeros(1,11);
@@ -189,41 +208,34 @@ TmpMarkers.CRTarget = currenttarget(4:6)*1000;
 TmpMarkers.CLTarget = currenttarget(1:3)*1000;
 c = 0;
 
-% while c<100 && norm(globalerror(:,end))>thresh
-% c = c+1;
-% currenttarget = CurrentPos + (globaltarget-CurrentPos) / norm(globaltarget-CurrentPos) * steplength;
-% deltaX = (currenttarget - CurrentPos);
-% deltatheta =  pinv(Jcinematique(TmpAngles,Sequence,TmpMarkers,Reperes)) * deltaX;
-% TmpAngles = TmpAngles + deltatheta;
-% [CurrentPos, TmpMarkers, TmpReperes] = fcinematique(TmpAngles,Sequence,TmpMarkers,Reperes);
-% globalerror =  [globalerror , globaltarget - CurrentPos];
-% norm(globalerror(:,end))
-% TmpMarkers.LTarget = globaltarget(1:3)*1000;
-% TmpMarkers.RTarget = globaltarget(4:6)*1000;
-% TmpMarkers.CRTarget = currenttarget(1:3)*1000;
-% TmpMarkers.CLTarget = currenttarget(4:6)*1000;
-% DisplayMarkers(TmpMarkers,0,TmpReperes);
-% view([45 -45 0])
-% pause;
-% close all;
-% end
-% DisplayMarkers(TmpMarkers,0,TmpReperes);
-
 options = optimset('TolFun',1e-5);
 NewAngles = [];
 NewPoul = [];
 % Markers.LPoul
 % Markers.RPoul = 
 
+A = model.gait(:,3);
+B = model.gait(:,6);
+% MA = max(model.gait(:,3));
+
+A = A - (max((max(abs(A)*1000 - MaxReach)),0) - (max(abs(A)*1000))*0.05)*0.001;
+B = B -  (max((max(abs(B)*1000 - MaxReach)),0) - (max(abs(B)*1000))*0.05)*0.001;
+
+model.gait(:,3) = A;
+model.gait(:,6) = B;
 
 N=[]; 
 for i = 1:size(model.gait,1)
     N = [N ; norm(model.gait(i,1:3)), norm(model.gait(i,4:6))];
 end
 MaxPoul = max(max(N))*1000;
+
 PoulaineRatio = 1;
 if MaxPoul > MaxReach
     PoulaineRatio = MaxReach / (MaxPoul+100) ;
+% elseif MaxPoul + 100 < MaxReach 
+%     PoulaineRatio2 = (MaxPoul+100) /  MaxReach;
+%     model.gait = model.gait  * PoulaineRatio2;
 end
 
 % close all;
@@ -231,8 +243,9 @@ end
 % PoulaineRatio = 0.8;
 % PoulaineRatio = 1;
 
-model.gait = model.gait * PoulaineRatio;
-
+model.gait = model.gait  * PoulaineRatio;
+% model.gait(:,1:2) = model.gait(:,1:2)  * PoulaineRatio;
+% model.gait(:,4:5) = model.gait(:,4:5)  * PoulaineRatio;
 
 % model.gait(:,3:3:6) = model.gait(:,3:3:6) + ones(size(model.gait(:,3:3:6))) * (-0.2);
 NewPoul=[];
@@ -324,7 +337,7 @@ for i = 1:11
 end
 
 NewPoulF = NewPoulF(size(NewPoul,1)+1:2*size(NewPoul,1),:);
-% DisplayGait(GaitMarkers);
+DisplayGait(GaitMarkers);
 
 NewAnglesF = NewAnglesF(S+1:2*S,:);
 

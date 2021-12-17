@@ -18,7 +18,10 @@ MaxLoop = 50;
 SaveV = [];
 SaveM = [];
 close all;
+fConv = figure(12);
+hold on;
 while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les convergences sans crash
+    c
     % Initialisation des Polynômes des TA.
     NPolA = [];
      
@@ -137,21 +140,11 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     end
     
     [tmpP2, tmpTA2] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
-%     DisplayCurves(tmpP2,10);
-%     DisplayCurves(tmpTA2,11);
-%     figure(10);
-%     hold on;
-%     for i = 1:3
-%         subplot(3,3,X(i,1));
-%         hold on;
-%         plot(X(i,2)*(size(P,1)-2)+1,X(i,X(i,1)+2),'kx');
-%     end
-%     for i = 4:6
-%         subplot(3,3,X(i,1));
-%         hold on;
-%         plot(X(i,2)*(size(P,1)-2)+1,X(i,X(i,1)-1),'kx');
-%     end
-    
+    DisplayCurves(tmpP2,10);
+    DisplayCurves(tmpTA2,11);
+    DisplayCurves(InitialGait,10);
+    DisplayX(X,size(tmpP2,1)-2,10)
+%     
     % Calcul de la fonction de coût pour les NPCA
     NRef = [];
     if derflag 
@@ -230,9 +223,13 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     % Jerk
     JerkRef = 0;
 %     Jerk(NPolA);
+
+    % ArticularCost 
+    
+    ACRef = ArticularCostPC(NPolA, Period, Sequence, Markers, Reperes, model.jointRangesMin, model.jointRangesMax);
     
     % Sauvegarde des valeurs de contrôle
-    Conv = [Conv , [norm(NRef); Cost ; JerkRef]];
+    Conv = [Conv , [norm(NRef); Cost ; JerkRef ; norm(ACRef)]];
     % Affichage
     if printflag
         norm(NRef)
@@ -247,7 +244,7 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         Manip;
     end
 %     [Jk, V, DJerk] = calc_jacobien_PC_3D(NPCA, NPolA,derflag, 0, X, dp,M, Cost, JerkRef, Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
-    [Jk, V, DJerk] = calc_jacobien_PC_4D(NPCA, NPolA,X,dp,M,Cost,JerkRef,Rmarkers,RReperes,Sequence,Inertie);
+    [Jk, V, DJerk, DAC] = calc_jacobien_PC_4D(NPCA, NPolA,X,dp,M,Cost,JerkRef,ACRef,Rmarkers,RReperes,Sequence,Inertie, model.jointRangesMin, model.jointRangesMax);
     SaveV = [SaveV , V];
     SaveM = [SaveM ; NPolA];
     % Si problème de taille de tableau, complétion avec des 1
@@ -267,7 +264,6 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     
     % Projection
     Proj = eye(2*size(PCA,1)) - Jkp*Jk;
-    
     
     % Mémorisation
     N = [N , norm(NRef)];
@@ -299,7 +295,12 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     
     delta = (delta/norm(delta))*min(norm(delta),0.1);
     
-    
+%     for ij = 1:size(tmpTA2,1)
+%         deltatheta2 = zeros(1,11);
+%         tmp = tmpTA2(i,:) + ;
+%         delta2 = fminsearch(@(deltatheta2) ArticularCost(tmp,deltatheta2,Proj,model.jointRangesMin, model.jointRangesMax),deltatheta2);
+%         tmp = tmp + (proj*delta2')';
+%     end
     % Coefficient pour pondérer les tâches secondaires -> Meme norme que
     % Proj
     weightCE = ceil(log(mean(mean(abs(Proj)))/(mean(abs(V)))));
@@ -319,7 +320,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
             % En général, VSter et JSter =0, donc pas d'influence
 %             Modifs = Jkp*delta + Proj*(V/norm(V))*VSter;
             VSter = -0.5*norm(Jkp*delta);
-            Modifs = Jkp*delta + Proj*(V/norm(V))*VSter;
+            PondAC = -0.5 * norm(Jkp*delta);
+            Modifs = Jkp*delta + Proj*(V/norm(V))*VSter + Proj*(DAC/norm(DAC))*PondAC;
         end
     end
     Modifs = (Modifs/norm(Modifs))*min(norm(Modifs),0.1);
@@ -349,7 +351,11 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     hold on;
     title('Convergence de la boucle d''optimisation - Travail des forces internes');
     plot(1:size(Conv,2),Conv(2,:));
-    
+%     subplot(3,1,3);
+%     hold on;
+%     title('Convergence de la boucle d''optimisation - Cout Articulaire (C<10e20 pour rester dans les limites)');
+%     plot(1:size(Conv,2),Conv(3,:));
+%     
     if Conv(1,end) < 0.01
        c=MaxLoop+1; 
     end
@@ -378,8 +384,11 @@ Results.TAFinal = TA;
 Results.InitialReference = model.reference;
 Results.InitialDescription = model.description;
 Results.InitialSplinedAngles = SplinedAngles;
-Results.OriginalX = tmpX;
-Results.ScaledX = X;
+Results.OriginalX = InputX;
+Results.EmpreintesPoulaineInput = PX;
+Results.PoulaineEmpreintesInput = OOPN;
+Results.PoulaineEmpreintesInputScaled = OPN;
+Results.EmpreintesScaled = X;
 Results.InitialPolynom = PolA;
 Results.FinalPolynom = NPolA;
 Results.IncrementalPCModification = pModifs;
