@@ -1,10 +1,10 @@
 function X = Xtreat(X,bool)
 % Symétrisation, rangement, ntm
 % Sym
-if size(X,2)==5
-    X = [X(1:3,2:5) ; X(1:3,2:5)];
+if size(X,2)<=5
+    X = [ones(size(X,1),1) ; X(1:3,2:5)];
 end
-X = [X(1:3,:) ; X(1:3,:)];
+X = [X(1:3,2:5) ; X(1:3,2:5)];
 X(4:6,:) = [X(4:6,1) + 0.5 , X(4:6,2)*-1 , X(4:6,3:4)];
 
 %Rangement ini si demandé;

@@ -1,4 +1,4 @@
-function [J , V, Jer] = calc_jacobien_PC_4D(NPCA,NPolA, X, dp, M, Cost, JerkRef ,Markers, Reperes,Sequence,Inertie)%,Fem1g, Fem6g,Tal1g,Fem1d,Fem6d,Tal1d)
+function [J , V, Jer, AC] = calc_jacobien_PC_4D(NPCA,NPolA, X, dp, M, Cost, JerkRef, ACRef, Markers, Reperes,Sequence,Inertie, buteesmin, buteesmax)%,Fem1g, Fem6g,Tal1g,Fem1d,Fem6d,Tal1d)
 %   Calcul de la Jacobienne sur la fonction d'erreur ErrorFun
 % Prends les TA sous forme de Polynome de spline (NPCA et NPolA)
 % derflag pour switcher entre tangente nulle (non fonctionnel) ou non
@@ -28,6 +28,7 @@ Count=0;
 % Initialisation
 V=[];
 Jer = [];
+AC = [];
 
 %
 % Partie fonctionnelle
@@ -83,17 +84,20 @@ for j=1:11  % Pour chaque angle
             return;
         end
         
-        % calcul des gradients CE / Jerk
+        % calcul des gradients CE / Jerk / Articular Cost
         if(mod(k,2))
 %             V = [V ; (CEShort(P,TA,M,Markers,Reperes)-Cost) /dp(1)];
 %             V = [V ; (ECShort(P,TA,M,Markers,Inertie)-Cost) /dp(1)];
             V = [V ; (ECShort(P,TA,M,Markers,Inertie)-Cost) /dp(1)];
             Jer = [Jer; (Jerk(PolModif)-JerkRef)/dp(1)];
+            AC = [AC; (ArticularCostPC(PolModif, Int, Sequence, Markers, Reperes, buteesmin, buteesmax)-ACRef)/dp(1)];      
         else
 %             V = [V ; (CEShort(P,TA,M,Markers,Reperes)-Cost) /dp(2)];
 %             V = [V ; (ECShort(P,TA,M,Markers,Inertie)-Cost) /dp(2)];
             V = [V ; (ECShort(P,TA,M,Markers,Inertie)-Cost) /dp(2)];
             Jer = [Jer; (Jerk(PolModif)-JerkRef)/dp(2)];
+            AC = [AC; (ArticularCostPC(PolModif, Int, Sequence, Markers, Reperes, buteesmin, buteesmax)-ACRef)/dp(2)];
+
         end
         
         
