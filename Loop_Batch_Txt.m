@@ -14,136 +14,43 @@ printflag=0;
 
 % Ajout de l'option gradient 0, non updaté pour les c3d actuels car pas de convergence de base.
 derflag = 0;
-MaxLoop = 50;
+MaxLoop = 100;
 SaveV = [];
 SaveM = [];
+SC = 0;
+PasDelta = 0.1; % Norm of the vector from curr pos to target pos
+PasModifs = 1; % 
 close all;
 fConv = figure(12);
 hold on;
+
+Mem = struct;
+
+Log = struct;
+Log.ModifsNorm = zeros(MaxLoop+1,1);
+% TimeIniOpti = tic();
+
+% Log.TimeIniCycle = zeros(MaxLoop+1,1);
+% Log.TimeCycle = zeros(MaxLoop+1,1);
+
 while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les convergences sans crash
+    
+%     Log.TimeIniCycle(c+1) = tic();
+    
     c
-    % Initialisation des Polynômes des TA.
-    NPolA = [];
-     
-    % Update des PCA en ajoutant Modifs - Initialisé à 0
-    for i = 1:size(PCA,1)
-        NPCA(i,2:3) = NPCA(i,2:3) + [Modifs(2*i-1) , Modifs(2*i)];
-        if c>1 % Ajout de l'erreur commise en cas de PCA éloignés de force 
-            NPCA(i,2:3) = NPCA(i,2:3) + [InvE(i,c) ,0];
-        end
-        % 1-périodicité des PCA sur t
-        NPCA(i,2) = NPCA(i,2) - fix(NPCA(i,2));
-    end
-    
-    % Passage sur un intervalle positif en vue de retourner sur [0 1]
-    NPCA(NPCA(:,2)<0,2) = NPCA(NPCA(:,2)<0,2)+1;
-    
-    % Compteur parce que la forme des PCA c'est dla merde pour certains calculs
-    count=0;
-       
-    % Si on a touché aux PCA, on risque 2 PCA trop proches
-    if c>1
-        for i = 1:s
-            % Pour chaque DDL qui n'est pas symétrisé
-            tmP = NPCA(NPCA(:,1)==i,:);
-            % On prend tous les PC d'un DDL, et on complère l'intervalle avec le premier +1 en t 
-            tmP = [tmP;tmP(1,1),tmP(1,2)+1,tmP(1,3)];
-            for j=1:size(tmP,1)-1
-                % Pour les PC de ce DDL
-                count = count +1;
-                % Si le PC courant et son voisin suivant  sont trop proches
-                if(abs(tmP(j,2) - tmP(j+1,2))<Threshold)
-                    % Stockage de l'occurence, du cycle et du PC
-                    Iflag = [Iflag, [c;i;j]];
-                    if(tmP(j,2)-tmP(j+1,2)>0)
-                        % S'ils ont été inversés lors des Modifs, remise dans l'ordre 
-                        a=[tmP(j+1,:);tmP(j,:)];
-                        tmP(j,:)= a(1,:);
-                        tmP(j+1,:)=a(2,:);
-                    end
-                    
-                    
-                    if (j==size(tmP,1)-1) % Exception dans l'ordre s'il s'agit du dernier, vu que c'est le miroir du premier 
-                        % Décalage des PCA trop proches
-                        tmP(1,2)=tmP(1,2)+Threshold - (tmP(end,2) - tmP(j,2));
-                        % Stockage et cumul des erreurs commises
-                        InvE(count-j+1,c+1)=InvE(count-j+1,c)+abs(tmP(j,2) - tmP(j+1,2));
-                    else % idem mais dans le cas général
-                        tmP(j+1,2)=tmP(j+1,2)+Threshold - (tmP(j+1,2) - tmP(j,2));
-                        InvE(count+1,c+1)=InvE(count+1,c)+abs(tmP(j,2) - tmP(j+1,2));
-                    end
-                end
-            end
-            % On récupère les PCA ordonnés, et séparés par au moins Threshold sur t 
-            NPCA(NPCA(:,1)==i,:) = tmP(1:end-1,:);
-        end
-    end
-    
-    % PCA sur DDL 1 à 7 Séparés et ordonnées
-    
-    
-    % Symétrisation Hard des PCA
-    for i=8:11
-        % On symétrise en déphasant
-        NPCA(NPCA(:,1)==i,2:3)=[NPCA(NPCA(:,1)==i-4,2)+mid/Period, NPCA(NPCA(:,1)==i-4,3)];
-        if i==9 || i==8
-            % Et en inversant pour HY et HX
-            NPCA(NPCA(:,1)==i,3)= -NPCA(NPCA(:,1)==i,3);
-        end
-        % Rangement des PCA dans l'ordre croissant de t
-        NPCA(NPCA(:,1)==i,2) = NPCA(NPCA(:,1)==i,2)- fix(NPCA(NPCA(:,1)==i,2));
-        tmp = NPCA(NPCA(:,1)==i,2:3);
-        [~,I]=sort(tmp(:,2));
-        NPCA(NPCA(:,1)==i,2:3) = tmp(I,:);
-    end
- 
-    % Détection et rangement en cas d'inversion n°2
-    for i=1:11
-        tmp = NPCA(NPCA(:,1)==i,:);
-        [tmp2,I] = sort(tmp(:,2));
-        if (tmp2~=tmp(:,2))
-            Cflag = [Cflag,[c;i]];
-        end
-        NPCA(NPCA(:,1)==i,:)=tmp(I,:);
-    end 
 
-    % To prevent crashes... Toujours le pb de t =0 pour un PCA...
-    for i =1:size(NPCA,1)
-        if NPCA(i,2)==0
-            NPCA(i,2)=eps;
-        end
-    end
+    [NPCA,NPolA,Iflag] = ModifPCA(Modifs, NPCA, Period, Sequence, Markers, Reperes, InvE, mid,...
+        Threshold, PCA, c, Cflag, rate, Iflag);
 
-    
-    % Calcul des Polynomes NPolA entre les NPCA
-    for i = 1:11
-        temp = PC_to_spline(NPCA(NPCA(:,1)==i,2:3),1);
-        NPolA = [NPolA ; i*ones(size(temp,1),1), temp(:,2:end)];
-    end
-    
-    % Phase supplémentaire : remise à 0 de moyenne des angles Pelviens
-    [~, tmpTA] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
-    
-%     tmpTA(:,1:3) = tmpTA(:,1:3) - mean(tmpTA(:,1:3));
-    
-    tmpPC = ForgePCA(tmpTA,0:1/(rate-1):1 ,1 );
-    Cheat = tmpPC(tmpPC(:,1)<=2,:);
-    Cheat(2:2:end,2) = Cheat(1:2:end,2) + 0.5;
-    Cheat(2:2:end,3) = -1*Cheat(1:2:end,3);
-    tmpPC(tmpPC(:,1)<=2,:) = Cheat;
-    NPCA = [tmpPC(tmpPC(:,1)<=2,:) ; NPCA(NPCA(:,1)>2,:)];
-    
-    NPolA = [];
-    for i = 1:11
-        temp = PC_to_spline(NPCA(NPCA(:,1)==i,2:3),1);
-        NPolA = [NPolA ; i*ones(size(temp,1),1), temp(:,2:end)];
-    end
-    
     [tmpP2, tmpTA2] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
-    DisplayCurves(tmpP2,10);
-    DisplayCurves(tmpTA2,11);
-    DisplayCurves(InitialGait,10);
-    DisplayX(X,size(tmpP2,1)-2,10)
+    
+    Mem(c+1).PC = NPCA;
+    Mem(c+1).Pol = Pol;
+    
+%     DisplayCurves(tmpP2,10);
+%     DisplayCurves(tmpTA2,11);
+%     DisplayCurves(InitialGait,10);
+%     DisplayX(X,size(tmpP2,1)-2,10)
 %     
     % Calcul de la fonction de coût pour les NPCA
     NRef = [];
@@ -156,9 +63,10 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
             NRef = [NRef; [a(i,:), b(i)]];
         end
     else
+        % Cibles intermédiaires :
         [a,NewMarkers,NewReperes] = ErrorFun3(NPolA,X,Sequence,Rmarkers,RReperes); % ErrorFun2 sinon
-        
         % Mesure et mémorisation de la norme de la somme des erreurs
+        
         for i =1:size(X,1)
             NRef = [NRef; X(i,3:end)-a(i,:)];
         end
@@ -167,6 +75,9 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     
     % Echantillonage pour calcul coûts secondaires
     [P, TA] = Sampling_txt(NPolA,Period,Sequence,Markers,Reperes);
+    
+    Mem(c+1).P = P;
+    Mem(c+1).TA = TA;
     
     % Sécurité
     if(isempty(P)||isempty(TA))
@@ -220,6 +131,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
 %     Cost = 0;
     Cost = ECShort(P,TA,M,Markers,Inertie);
     
+    Mem(c+1).EC = Cost;
+    
     % Jerk
     JerkRef = 0;
 %     Jerk(NPolA);
@@ -227,6 +140,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     % ArticularCost 
     
     ACRef = ArticularCostPC(NPolA, Period, Sequence, Markers, Reperes, model.jointRangesMin, model.jointRangesMax);
+    
+    Mem(c+1).AC = ACRef;
     
     % Sauvegarde des valeurs de contrôle
     Conv = [Conv , [norm(NRef); Cost ; JerkRef ; norm(ACRef)]];
@@ -236,7 +151,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         Cost
         JerkRef
     end
-        
+       
+    Mem(c+1).Conv = Conv;
     
     % Calcul de la Jacobienne
     Manipflag =0;
@@ -244,9 +160,14 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         Manip;
     end
 %     [Jk, V, DJerk] = calc_jacobien_PC_3D(NPCA, NPolA,derflag, 0, X, dp,M, Cost, JerkRef, Fem1g, Fem1d, Fem6g, Fem6d, Tal1g, Tal1d, R_monde_local,R_Pelvis_monde_local, R_LFem_ref_local, R_LTib_ref_local, R_RFem_ref_local, R_RTib_ref_local);
-    [Jk, V, DJerk, DAC] = calc_jacobien_PC_4D(NPCA, NPolA,X,dp,M,Cost,JerkRef,ACRef,Rmarkers,RReperes,Sequence,Inertie, model.jointRangesMin, model.jointRangesMax);
+    [Jk, V, DJerk, DAC] = calc_jacobien_PC_4D(NPCA, NPolA,X,dp,M,Cost,JerkRef,ACRef,Rmarkers,RReperes, ...
+        Sequence,Inertie, model.jointRangesMin, model.jointRangesMax);
     SaveV = [SaveV , V];
     SaveM = [SaveM ; NPolA];
+    
+    Mem(c+1).Jk = Jk;
+    
+    
     % Si problème de taille de tableau, complétion avec des 1
     if size(V,1)~=2*size(NPCA,1)
         V = [V ; ones(size(Modifs,1)-size(V,1),1)];
@@ -256,11 +177,20 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     % Si Erreur -> Exit
     if(isempty(Jk)||isempty(V)||isempty(DJerk))
 %         break
+    Log.FatalFunctionErrorCycle = c;
     error('Jacobian is fucked');
     end
     
     % Pseudo Inverse
     Jkp = pinv(Jk);
+    
+    
+    % Protection contre singularités : 
+    if norm(Jk) > 10^3 || norm(Jkp) > 10^3 
+        [NPCA,NPolA,Jk, Jkp, V, DJerk, DAC, Log] = JacSingularitiesCheck( NPCA, NPolA, X,dp,M,Cost,JerkRef , ...
+            ACRef, Period, Sequence, Markers, Reperes, InvE, mid, Threshold, PCA, c, Cflag, rate, ...
+            model, tmpP2, tmpTA2,Log, SC, Jk, Jkp);
+    end
     
     % Projection
     Proj = eye(2*size(PCA,1)) - Jkp*Jk;
@@ -271,7 +201,8 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
     mJ=[mJ, JerkRef];
     pModifs = [pModifs , Modifs];
     
-    
+    Mem(c+1).N = N;
+    Mem(c+1).Modifs = Modifs;
     % Adaptation de la forme du vecteur de distance à X
     if derflag % Pas utilisé
         t=zeros(4*size(NRef,1),1);
@@ -292,13 +223,13 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         end
         delta = t;
     end
-    
-    delta = (delta/norm(delta))*min(norm(delta),0.1);
+    delta = (delta/norm(delta))*min(norm(delta),PasDelta);
     
 %     for ij = 1:size(tmpTA2,1)
 %         deltatheta2 = zeros(1,11);
 %         tmp = tmpTA2(i,:) + ;
-%         delta2 = fminsearch(@(deltatheta2) ArticularCost(tmp,deltatheta2,Proj,model.jointRangesMin, model.jointRangesMax),deltatheta2);
+%         delta2 = fminsearch(@(deltatheta2) ArticularCost(tmp,deltatheta2,Proj,model.jointRangesMin, ...
+%           model.jointRangesMax),deltatheta2);
 %         tmp = tmp + (proj*delta2')';
 %     end
     % Coefficient pour pondérer les tâches secondaires -> Meme norme que
@@ -319,14 +250,55 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         else
             % En général, VSter et JSter =0, donc pas d'influence
 %             Modifs = Jkp*delta + Proj*(V/norm(V))*VSter;
-            VSter = -0.5*norm(Jkp*delta);
+            VSter = -0.2 * norm(Jkp*delta);
             PondAC = -0.5 * norm(Jkp*delta);
-            Modifs = Jkp*delta + Proj*(V/norm(V))*VSter + Proj*(DAC/norm(DAC))*PondAC;
+            
+             %+ Proj*(V/norm(V))*VSter + Proj*(DAC/norm(DAC))*PondAC;
+            TS1 = Proj * V / norm(Proj * V) * VSter;
+            TS2 = Proj * DAC / norm(Proj * DAC) * PondAC;
+            
+            Modifs = Jkp*delta + TS1 ;%+ TS2;
+            
+%             %% 
+%             
+%             [TNPCA,TNPolA,Iflag] = ModifPCA(Modifs, NPCA, Period, Sequence, Markers, Reperes, InvE, ...
+%                 mid, Threshold, PCA, c, Cflag, rate, Iflag);
+%             
+%             [Jk, V, DJerk, DAC] = calc_jacobien_PC_4D(TNPCA, TNPolA,X,dp,M,Cost,JerkRef,ACRef, ...
+%                 Rmarkers,RReperes,Sequence,Inertie, model.jointRangesMin, model.jointRangesMax);
+% 
+%             Jkp = pinv(Jk);
+%                         
+%             % Protection contre singularités : 
+%             if norm(Jk) > 10^3 || norm(Jkp) > 10^3
+%                 [NPCA,NPolA,Jk, Jkp, V, DJerk, DAC, Log] = JacSingularitiesCheck(NPCA, NPolA, X,dp,M,Cost, ...
+%                     JerkRef , ACRef, Period, Sequence, Markers, Reperes, InvE, mid, Threshold, PCA, c, Cflag, ...
+%                     rate, model, tmpP2, tmpTA2,Log, SC, Jk, Jkp);
+%             end
+%             Fflag = 1;
+%             if Fflag
+%                 Proj = eye(2*size(PCA,1)) - Jkp*Jk;
+%                 
+%                 deltatheta2_Ini = 0.1 * ones(size(Modifs));
+%                 options = optimset('Display','Iter','TolFun',1e-1,'MaxIter',5);
+%                 deltatheta2 = fminsearch(@(deltatheta2) EnergyCostOptim(deltatheta2, Modifs, Proj, ...
+%                     NPCA, Period, Sequence, Markers, Reperes, InvE, mid, Threshold, PCA, c, Cflag, ...
+%                     rate, M, Inertie,Iflag), deltatheta2_Ini, options);
+%                 
+%                 Modifs = Modifs + (Proj*deltatheta2)*VSter;%Proj*(V/norm(V))*VSter + Proj*(DAC/norm(DAC))*PondAC;
+%             end
+%             %%
+            
+            
+            
+
         end
     end
-    Modifs = (Modifs/norm(Modifs))*min(norm(Modifs),0.1);
-    % Sauvegarde des poids -> inutile ici car je ne les fais plus varier dynamiquement actuellement 
-    mSter=[mSter ; VSter,JSter];
+    Log.ModifsNorm(c+1) = norm(Modifs);
+    Modifs = (Modifs/norm(Modifs))*min(norm(Modifs),PasModifs);
+    
+%     % Sauvegarde des poids -> inutile ici car je ne les fais plus varier dynamiquement actuellement 
+%     mSter=[mSter ; VSter,JSter];
        
     % Affichage de la convergence
     if printflag
@@ -339,41 +311,57 @@ while c<MaxLoop % Nombre de cycle arbitraire, 20-25 suffisant pour discerner les
         subplot(3,1,3);
         plot(1:size(Conv,2),Conv(3,1:end),'rx');
     end
+    
     % Incrémentation du compteur de cycles
     c = c+1;
-    fConv = figure(12);
-    hold on;
-    subplot(2,1,1);
-    hold on;
-    title('Convergence de la boucle d''optimisation - somme des distances aux empreintes - en m');
-    plot(1:size(Conv,2),Conv(1,:));
-    subplot(2,1,2);
-    hold on;
-    title('Convergence de la boucle d''optimisation - Travail des forces internes');
-    plot(1:size(Conv,2),Conv(2,:));
+%     fConv = [];
+%     fConv = figure(12);
+%     hold on;
+%     subplot(2,1,1);
+%     hold on;
+%     title('Convergence de la boucle d''optimisation - somme des distances aux empreintes - en m');
+%     plot(1:size(Conv,2),Conv(1,:));
+%     subplot(2,1,2);
+%     hold on;
+%     title('Convergence de la boucle d''optimisation - Travail des forces internes');
+%     plot(1:size(Conv,2),Conv(2,:));
 %     subplot(3,1,3);
 %     hold on;
 %     title('Convergence de la boucle d''optimisation - Cout Articulaire (C<10e20 pour rester dans les limites)');
 %     plot(1:size(Conv,2),Conv(3,:));
-%     
+    
+    Log.OptiCycle.ClosureCycle = c;
+%     Log.TimeCycle(c) = toc(Log.TimeIniCycle(c));
+    
     if Conv(1,end) < 0.01
        c=MaxLoop+1; 
+    else
+        
     end
-    
 end
 
-[Gait, GaitMarkers, GaitReperes] = Angles2Gait(tmpTA2,Sequence,Markers,Reperes,model.gait*1000,P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
+%% Selection de la meilleure solution
+
+[~,d] = min(Conv(1,:));
+Mem = Mem(d);
+
+%%
+
+% Log.TimeEndOpti = toc(Log.TimeIniOpti);
+[Gait, GaitMarkers, GaitReperes] = Angles2Gait(tmpTA2,Sequence,Markers,Reperes,model.gait*1000, ...
+    P*1000,SplinedComputedPoulaine*1000,X(:,3:5)*1000);%[model.gait(4:6,:)*1000, model.gait(1:3,:)*1000]);
 % close(figure(1));
 close all;
-fFGait = DisplayGait(GaitMarkers);
+% fFGait = DisplayGait(GaitMarkers);
 
-% DisplayCurves(P,2);
+% DisplayCurves(P,2);       
 % DisplayCurves([P(:,4:6), P(:,1:3)],2);
 % DisplayCurves(tmpTA2,3);
 % DisplayCurves([tmpTA2(:,1:3), tmpTA2(:,8:11) , tmpTA2(:,4:7)],3);
 
 Results = struct;
 Results.Inputs = answer;
+Results.Mem = Mem;
 Results.InitialPoulaine = InitialGait;
 Results.InitialPoulaineScaled = model.gait;
 Results.InitialPoulaineScaledIK = NewPoul;
@@ -394,6 +382,12 @@ Results.FinalPolynom = NPolA;
 Results.IncrementalPCModification = pModifs;
 Results.Convergence = Conv;
 Results.NCycles = c;
+Results.Logs = Log;
+if exist('PolX')
+    Results.TargetPolynom = PolX;
+%     Results.Target = ;
+end
+
 % Results.Figure.Conv = fConv;
 % Results.Figure.FinalGait = fFGait;
 Results.MemoryEC = mV;

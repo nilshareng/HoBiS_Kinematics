@@ -1,7 +1,7 @@
 %%% Handles the difference between loading a .c3d walk and a simple model
 
 flag.prints = 1;
-
+flag.IntermX = 1;
 
 % Load Initial Gait - Gait to be transformed / 11 * 100 vector of joint coordinates in splines 
 
@@ -20,7 +20,11 @@ switch InitialGaitPath(:,end-2:end)
         InputX = X;
         clear 'X';
         load(strcat(InitialGaitPath));
-        
+%         [~, t] = sort(abs(min(PN(:,1:3))) + abs(max(PN(:,1:3))));
+%         t = [t , t+3];
+%         PN = PN(:,t);
+%         PN = [PN(:,1) -1*PN(:,2) PN(:,3) PN(:,4) -1*PN(:,5) PN(:,6)];
+        PolX = Pol;
         if exist('X')
             PresetPrints = X;
         else
@@ -31,20 +35,39 @@ switch InitialGaitPath(:,end-2:end)
         tmpX = X;
         load(strcat(InitialGaitPath));
         PX = X;
-        PX = Xtreat(PX);
+        PX = Xtreat(PX,1);
+        
+%         % Positionnement du min Z de la poulaine initiale sur le min Z empreintes 
+%          
+%         [~, MINX] = min(X(:,end));
+%         [~, MIOX] = min(tmpX(:,end));
+%         
+%         DeltaX = tmpX(MIOX, 3:5) - X(MINX, 3:5);
+%         DeltaT = tmpX(MIOX, 2) - X(MINX, 2);
+%         
+%         % Décalage temporel de DeltaT du cycle de la poulaine Ini, et de
+%         % DeltaX pour retrouver l'empreinte Ini
+%         
+%         X(1:3,2) = X(1:3,2) + DeltaT;
+%         X(1:3,3:5) = X(1:3,3:5) + DeltaX;
+%         
+%         X = Xtreat(X);
+        
+        %
+        
         X = tmpX;
         [~, t] = sort(abs(min(PN(:,1:3))) + abs(max(PN(:,1:3))));
         t = [t , t+3];
         PN = PN(:,t);
         PN = [PN(:,1) -1*PN(:,2) PN(:,3) PN(:,4) -1*PN(:,5) PN(:,6)];
         if exist('OPN')
-            OPN = [OPN(:,1) -1*OPN(:,2) OPN(:,3) OPN(:,4) -1*OPN(:,5) OPN(:,6)];
+%             OPN = [OPN(:,1) -1*OPN(:,2) OPN(:,3) OPN(:,4) -1*OPN(:,5) OPN(:,6)];
         else
             OPN = PN;
         end
         
         %     [X(1:3,3:-1:1), PN] = Ratio2merde(PX,PN,X,OPN,MaxReach);
-        %     X = Xtreat(X);
+        X = Xtreat(X,1);
         
         InitialGait = PN;
         Period = max(size(InitialGait));
@@ -59,15 +82,17 @@ switch InitialGaitPath(:,end-2:end)
         % Attribution
         model.gait = SplinedPoulaine;
         if flag.prints
-            figure;
-            hold on;
-            title('Comparison loaded poulaine vs Spline poulaine');
-            for i = 1:6
-                subplot(2,3,i)
-                hold on;
-                plot(InitialGait(:,i));
-                plot(SplinedPoulaine(:,i));
-            end
+%             Curves(InitialGait,1);
+%             DisplDisplayayCurves(SplinedPoulaine,1);
+%             figure;
+%             hold on;
+%             title('Comparison loaded poulaine vs Spline poulaine');
+%             for i = 1:6
+%                 subplot(2,3,i)
+%                 hold on;
+%                 plot(InitialGait(:,i));
+%                 plot(SplinedPoulaine(:,i));
+%             end
         end
 
         
@@ -81,7 +106,7 @@ switch InitialGaitPath(:,end-2:end)
             InitialGait(:,4:6) = [InitialGait];
         end
         OPN = InitialGait;
-        XPoulaineIn = FindFootprints(OPN);
+        PX = FindFootprints(OPN);
         
         % Spline Approx of Initial Gait
         Period = max(size(InitialGait));
@@ -98,15 +123,18 @@ switch InitialGaitPath(:,end-2:end)
         PN = SplinedPoulaine;
         XPoulaineInScaled = FindFootprints(PN);
         if flag.prints
-            figure;
-            hold on;
-            title('Comparison loaded poulaine vs Spline poulaine');
-            for i = 1:6
-                subplot(2,3,i)
-                hold on;
-                plot(InitialGait(:,i));
-                plot(SplinedPoulaine(:,i));
-            end
+            DisplayCurves(InitialGait);
+            DisplayCurves(SplinedPoulaine);
+%             figure;
+%             hold on;
+%             title('Comparison loaded poulaine vs Spline poulaine');
+%             for i = 1:6
+%                 subplot(2,3,i)
+%                 hold on;
+%                 plot(InitialGait(:,i));
+%                 plot(SplinedPoulaine(:,i));
+%                 legend;
+%             end
         end
         
 end
@@ -131,7 +159,8 @@ if exist('OPN')
     
     PoulaineRatioOld = 1;
     if any(abs(X(:,5)*1000)>MaxReach)
-        X(abs(X(:,5)*1000)>MaxReach,5) = X(abs(X(:,5)*1000)>MaxReach,5) + min( MaxReach - abs(X(abs(X(:,5)*1000)>MaxReach,5))*1000,0)*0.001;
+        X(abs(X(:,5)*1000)>MaxReach,5) = X(abs(X(:,5)*1000)>MaxReach,5) + ...
+            min( MaxReach - abs(X(abs(X(:,5)*1000)>MaxReach,5))*1000,0)*0.001;
     end
     N=[];
     for i = 1:min(size(model.gait,1),size(OPN,1))
@@ -139,7 +168,7 @@ if exist('OPN')
     end
     MaxPoul = max(max(N))*1000;
     if MaxPoul > MaxReach
-        PoulaineRatioOld = MaxReach / (MaxPoul+100) ;
+%         PoulaineRatioOld = MaxReach / (MaxPoul+100) ;
     end
 %     X(:,3:4) = X(:,3:4)*PoulaineRatioOld;
 %     X(:,5) = X(:,5)*((PoulaineRatioOld+1)/2);
@@ -162,7 +191,7 @@ anglesR2I = zeros(11,1);
 % IK :
 
 J = [];
-PosC = model.gait(1,:);
+PosC = model.gait(1,:); 
 % PosC = a;
 deltaX = 0;
 Angles = zeros(((max(size(model.gait)))+1)*10,11);
@@ -182,7 +211,7 @@ KinforMin(Angles,Sequence,Target,Markers,Reperes)
 options = optimset('Display','Iter','TolFun',1e-5);
 AnglesDesc2Ref = fminsearch(@(Angles) KinforMin(Angles,Sequence,Target,Markers,Reperes),NAngles,options);
 [CurrentPos, Cmarkers, Creperes] = fcinematique(AnglesDesc2Ref,Sequence,Markers,RReperes);
-DisplayMarkers(Cmarkers,1,Creperes);
+% DisplayMarkers(Cmarkers,1,Creperes);
 error = CurrentPos*1000 - [Rmarkers.LTal1' ; Rmarkers.RTal1'];%/1000
 norm(error);
 
@@ -231,7 +260,7 @@ end
 MaxPoul = max(max(N))*1000;
 
 PoulaineRatio = 1;
-if MaxPoul > MaxReach
+if MaxPoul > MaxReach 
     PoulaineRatio = MaxReach / (MaxPoul+100) ;
 % elseif MaxPoul + 100 < MaxReach 
 %     PoulaineRatio2 = (MaxPoul+100) /  MaxReach;
@@ -268,7 +297,8 @@ for i =1:size(model.gait,1)
         proj = Jp*J;
         tmp = tmp + deltatheta';
         deltatheta2 = ones(1,11)*0.001;
-        delta2 = fminsearch(@(deltatheta2) ArticularCost(tmp,deltatheta2,proj,model.jointRangesMin, model.jointRangesMax),deltatheta2);
+        delta2 = fminsearch(@(deltatheta2) ArticularCost(tmp,deltatheta2,proj,model.jointRangesMin, ...
+            model.jointRangesMax),deltatheta2);
         tmp = tmp + (proj*delta2')';
         CurrentPos = fcinematique(tmp,Sequence,Markers,RReperes);
     end
@@ -294,10 +324,10 @@ for i =1:size(model.gait,1)
     GaitMarkers(i).ROPoul = NewPoul(:,4:6)*1000;
     GaitMarkers(i).X = X(:,3:5)*1000;
 end
-DisplayCurves(NewPoul);
+% DisplayCurves(NewPoul);
 % figure;
 % hold on;
-DisplayCurves(NewAngles);
+% DisplayCurves(NewAngles);
 
 %%% Filtering the noisy results
 freq=5;
@@ -337,7 +367,7 @@ for i = 1:11
 end
 
 NewPoulF = NewPoulF(size(NewPoul,1)+1:2*size(NewPoul,1),:);
-DisplayGait(GaitMarkers);
+% DisplayGait(GaitMarkers,7);
 
 NewAnglesF = NewAnglesF(S+1:2*S,:);
 
@@ -535,13 +565,13 @@ end
 
 figure(6);
 hold on;
-DisplayCurves(tmpTA2,6);
-DisplayCurves(SplinedAngles,6);
+% DisplayCurves(tmpTA2,6);
+% DisplayCurves(SplinedAngles,6);
 
 figure(2);
 hold on;
-DisplayCurves(tmpP2,2);
-DisplayCurves(ComputedPoulaine,2);
+% DisplayCurves(tmpP2,2);
+% DisplayCurves(ComputedPoulaine,2);
 for i = 1   :3
     subplot(3,3,X(i,1));
     hold on;
