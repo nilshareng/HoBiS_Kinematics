@@ -35,9 +35,10 @@ I used 'struct' a lot... sorry for that...
 'TX' the filtered (low pass) markers trajectories. Right then Left
 'Poulaine' the filterd Ankle trajectory (easier for manips)
 
-- PolA : Articular Trajectories splined Polynomes. set as a Nx7 matrix. Each line is a 3rd degree polynome, its designated interval and the degree of freedom it represents. 
+- PolA : Articular Trajectories splined Polynomials. set as a Nx7 matrix. Each line is a 3rd degree polynomial, its designated interval and the degree of freedom it represents. 
 Col 1 is the degree of freedom (1-11)
-Col 2-3 is the interval of the spline (from 0.00 to 1.9). The total length of a degree of freedom's interval is 1 (100% of a walk cycle). (e.g [0.1 0.5]) 
+Col 2-3 is the interval of the spline (from 0.00 to 1.9)(e.g [0.1 0.5]) . The total length of a degree of freedom's (DOF) interval is 1 (100% of a walk cycle)(e.g [0.1 0.5] and [0.5 1.1] for a DOF with 2 intervals) . 
+Col 4-7 are the coefficients of the 3rd degree polynomial - descending order (e.g N4*X^3 + N5*X^2 + N6*X + N7).
 
 
 Important remark : The 'Markers' issued from a .txt model and a .c3d Mocap are not compatible ! 
