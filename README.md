@@ -13,21 +13,32 @@ Dependencies : DSP System Toolbox ; Signal Processing Toolbox
 
 # Lines of command : 
 
-Simulation_Cinematique
-Simulation_Cinematique_Batch
+To select manually the different entries
+- Simulation_Cinematique 
+
+To launch a batch of simulations by harcoding the entries 
+- Simulation_Cinematique_Batch
 
 # Main Objects
 
 I used 'struct' a lot... sorry for that...
 
 - Markers : A set of marker from a .c3d file (from 'btkgetmarkers') or from a .txt file for a model (from 'HobisDataParser'). Contains the markers XYZ coordinates in fields sorted by name 'Markers.RFWT, Markers.LFWT, ...'
-- 
+
 - KinModel : Defined using 'Loadc3dKinModel'. Contains data from a .c3d Mocap file, processed to build a Kinematic Model with fields :
 'AC' with subfields 'Pelvis, RHip, ...' XYZ coordinates of the articular centres in the Pelvic Coordinate System (PCS) 
 'Markers'
-''
-''
-''
+'Reperes' the segments coordinate systems
+'ParamPhy' Deprecated - segments lengths
+'Angles' the Articular trajectories of the various joints 
+'TA' the filtered (low pass) Articular trajectories easier for manips Right side first
+'TX' the filtered (low pass) markers trajectories. Right then Left
+'Poulaine' the filterd Ankle trajectory (easier for manips)
+
+- PolA : Articular Trajectories splined Polynomes. set as a Nx7 matrix. Each line is a 3rd degree polynome, its designated interval and the degree of freedom it represents. 
+Col 1 is the degree of freedom (1-11)
+Col 2-3 is the interval of the spline (from 0.00 to 1.9). The total length of a degree of freedom's interval is 1 (100% of a walk cycle). (e.g [0.1 0.5]) 
+
 
 Important remark : The 'Markers' issued from a .txt model and a .c3d Mocap are not compatible ! 
 More fields (more markers) exist in the text files. When it is necessary to compare .txt model file 'Txt_Markers' in conjunction with a .c3d Mocap file 'C3D_Markers' (e.g. for scaling), I use 'AdaptMarkers' function to force the MarkerSet compatibilty 
